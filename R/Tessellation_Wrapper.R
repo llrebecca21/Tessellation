@@ -149,13 +149,14 @@ S=c(1250,1750,7250,7750,12250,12750,17250,17750)
 # weights
 w=c(0.04190068, 0.63559150, 0.32250782) 
 
-# call distance_partitionC function (built in C++)
+# call distance_partitionC_Lee function (built in C++)
+# vectorized distance_partition function
 prt=distance_partitionC_Lee(as.matrix(x[,-c(1,2)]),S,w)
 
-# microbenchmark(distance_partitionC_Lee(as.matrix(x[,-c(1,2)]),S,w), times = 100)
+microbenchmark(distance_partitionC_Lee(as.matrix(x[,-c(1,2)]),S,w), times = 100)
 
 # Call time_interval function (built in R)
-interval_curr=time_interval(x,S,prt,NumObs)
+interval_curr = time_interval(x,S,prt,NumObs)
 
 
 
