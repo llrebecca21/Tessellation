@@ -6,6 +6,9 @@
 
 #### whittle_like is for ith tessellation: T is T[i,] and beta[i,]
 
+# source outside files
+source("R/lin_basis_func.R")
+
 whittle_like <-
   function(y,index,nseg_time_temp,beta,nbasis) {
     
