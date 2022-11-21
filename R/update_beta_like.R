@@ -1,5 +1,14 @@
 # Create function for update of beta and log likelihood in R and then transfer to C++
-update_beta_like = function(){
+# Source outside functions
+# gr ; fn ; he ; Chol_sampling ; Chol_density ; whittle_like
+source("R/fn.R")
+source("R/gr.R")
+source("R/Chol_sampling.R")
+source("R/Chol_density.R")
+source("R/whittle_like.R")
+
+update_beta_like = function(x, M, prt, ){
+  
   # update beta and loglike
   for(i in 1:M)
   {
@@ -15,13 +24,13 @@ update_beta_like = function(){
     yy <- list()
     uu=0
     
-    for(l in prop_obs_index)
+    for(d in prop_obs_index)
     {
       uu=uu+1
       
-      nfreq <- floor(nseg_time_temp[l] / 2)
+      nfreq <- floor(nseg_time_temp[d] / 2)
       
-      y[[uu]] <- log(abs(fft(x_t[tmin[l]:tmax[l], l])) ^ 2 / nseg_time_temp[l])
+      y[[uu]] <- log(abs(fft(x_t[tmin[d]:tmax[d], d])) ^ 2 / nseg_time_temp[d])
       yy[[uu]] <- y[[uu]][1:(nfreq + 1)]
       
     }
