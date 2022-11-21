@@ -139,7 +139,7 @@ plot(x[,c(4,5)])
 # set the seed for the section
 set.seed(2333)
 
-## Initialization of tessellation
+## Initialization of tessellation ##
 
 # Define variables for the tessellation
 # number of centers
@@ -156,8 +156,21 @@ prt=distance_partitionC_Lee(as.matrix(x[,-c(1,2)]),S,w)
 microbenchmark(distance_partitionC_Lee(as.matrix(x[,-c(1,2)]),S,w), times = 100)
 
 # Call time_interval function (built in R)
+# Function calculates the time interval for 
+# inputs: x     : 20_000 x 5 matrix
+#         S     : 8 x 1 col vec
+#         prt   : 20_000 x 1 matrix
+#         NumObs: "numeric" 20
 interval_curr = time_interval(x,S,prt,NumObs)
 
+
+# Max number of tessellation
+Mmax = 10
+
+# Tmin
+Tmin = 50
+
+## MCMC parameters ## 
 
 
 
