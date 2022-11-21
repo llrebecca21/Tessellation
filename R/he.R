@@ -1,5 +1,6 @@
 # functions called in he
 # lin_basis_func
+source("R/lin_basis_func.R")
 
 he = function(param,
             index,
