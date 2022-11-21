@@ -8,6 +8,7 @@ rm(list = ls())
 source('R/M_lprior.R')
 source('R/time_interval.R')
 source('R/range01.R')
+source('R/lin_basis_func.R')
 Rcpp::sourceCpp('src/distance_partitionC_Lee.cpp')
 
 # Call libraries
@@ -171,7 +172,24 @@ Mmax = 10
 Tmin = 50
 
 ## MCMC parameters ## 
+nbasis = 7
+nbeta = nbasis + 1
+sigmasqalpha = 100
 
+# Initalization of half t-distribution
+tau = rep(10, M)
+g = rep(1, M)
+
+nus = 2
+Gs = 10
+param_random = 0.2
+nb_alpha = nbeta
+
+## Calculate log power spectrum ##
+# fixed the number of Fourier frequencies
+nfreq = 50
+freq = (0:nfreq) / (2 * nfreq)
+nu_mat = lin_basis_func(freq,nbeta)
 
 
 
