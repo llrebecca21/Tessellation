@@ -18,6 +18,7 @@ library(NPflow)
 library(plotly)
 library(invgamma)
 library(gtools)
+library(forecast)
 
 
 
@@ -27,7 +28,6 @@ range01 <- function(x){(x-min(x))/(max(x)-min(x))}
 ###################################
 # Abrupt-abrupt simulate data
 #################################
-library(forecast)
 set.seed(1080)
 Ntime=1000
 NumX=2
@@ -177,7 +177,7 @@ plot(x[,c(4,5)])
 ###################################
 # slowly-abrupt simulate data
 #################################
-library(forecast)
+
 set.seed(1080)
 Ntime=1000
 NumX=2
