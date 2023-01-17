@@ -83,9 +83,14 @@ colnames(x) = names
 #colnames(x)=names
 
 
+# Fill in the columns of x #
+# replace index with 1:20 with each repeated 1_000 times
 x$index=rep(1:NumObs,each=Ntime)
+# replace time with 1:1000 repeated 20 times
 x$time=rep(1:Ntime,NumObs)
+# replace scaled_time with proportion of length completed; repeats each 1_000 index  
 x$scaled_time=range01(x$time)
+
 
 x[,4:(NumXT+2)]=apply(xx,2,function(i) rep(i,each=Ntime))
 
