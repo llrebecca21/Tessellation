@@ -71,18 +71,6 @@ x = data.frame(x)
 # rename the columns of x
 colnames(x) = names
 
-
-#x=matrix(0,Ntime*NumObs,NumXT+2)
-#names=c("index","time","scaled_time")
-#for(i in 1:NumX)
-#{
-#  xname=paste("x",i,sep = "")
-#  names=append(names,xname)
-#}
-#x=data.frame(x)
-#colnames(x)=names
-
-
 # Fill in the columns of x #
 # replace index with 1:20 with each repeated 1_000 times
 x$index=rep(1:NumObs,each=Ntime)
@@ -97,10 +85,6 @@ x[,4:(NumXT+2)]=apply(X = xx, MARGIN = 2, FUN = function(i) rep(i,each=Ntime))
 
 
 ## create time series x_t, abrupt change at x2, and at half time points
-#ts.sim=matrix(rep(0,NumObs*Ntime),NumObs,Ntime)
-#ts.sim1=matrix(rep(0,NumObs*Ntime/2),NumObs,Ntime/2)
-#ts.sim2=matrix(rep(0,NumObs*Ntime/2),NumObs,Ntime/2)
-
 ## Redo ts.sim, ts.sim1, ts.sim2 ##
 # ts.sim = matrix(data = 0, nrow = NumObs, ncol = Ntime)
 ts.sim1 = matrix(data = 0, nrow = Ntime/2, ncol = NumObs)
@@ -146,21 +130,6 @@ for(i in 1:NumObs)
 
 x_t = rbind(ts.sim1,ts.sim2)  
 
-
-
-
-# standardized
-#for (i in 1:NumObs)
-#{
-#  xmat=cbind(matrix(1,dim(x_t)[1],1), matrix(seq(1,dim(x_t)[1],1),dim(x_t)[1],1))
-#  linfit=solve(t(xmat)%*%xmat)%*%t(xmat)%*%x_t[,i]
-#  x_t[,i]=x_t[,i]-xmat%*%linfit
-#}
-#ts.plot(x_t[,20])
-
-
-#plot(x[,c(4,5)])
-
 # Redo Standardized #
 xmat = cbind(1,1:Ntime)
 linfit = solve(crossprod(xmat), crossprod(xmat,x_t))
@@ -169,10 +138,6 @@ x_t = x_t - xmat %*% linfit
 ts.plot(x_t[,20])
 
 plot(x[,c(4,5)])
-
-
-
-
 
 ###################################
 # slowly-abrupt simulate data
@@ -326,32 +291,16 @@ for(i in 1:NumObs)
 # transpose the resulting time series x_t
 x_t = t(ts.sim)
 
-# dimensions of x_t 
-# nrow(x_t) = 1000
-# ncol(x_t) = 20 
-
-# standardized
-#for (i in 1:NumObs)
-#{
-#  xmat=cbind(matrix(1, nrow(x_t), 1), matrix(seq(1, nrow(x_t), 1), nrow(x_t), 1))
-#  linfit=solve(t(xmat)%*%xmat)%*%t(xmat)%*%x_t[,i]
-#  x_t[,i]=x_t[,i]-xmat%*%linfit
-#}
-#ts.plot(x_t[,1])
-#plot(x[,c(4,5)])
-
-
 # Redo Standardized #
 xmat = cbind(1,1:Ntime)
 linfit = solve(crossprod(xmat), crossprod(xmat,x_t))
 x_t = x_t - xmat %*% linfit
 
+# plot the time series
 ts.plot(x_t[,20])
 
+# plot portion of x
 plot(x[,c(4,5)])
-
-
-
 
 ###############################################
 #  Hyperparameters for tessellation partition
