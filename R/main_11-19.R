@@ -150,16 +150,26 @@ x_t = rbind(ts.sim1,ts.sim2)
 
 
 # standardized
-for (i in 1:NumObs)
-{
-  xmat=cbind(matrix(1,dim(x_t)[1],1), matrix(seq(1,dim(x_t)[1],1),dim(x_t)[1],1))
-  linfit=solve(t(xmat)%*%xmat)%*%t(xmat)%*%x_t[,i]
-  x_t[,i]=x_t[,i]-xmat%*%linfit
-}
+#for (i in 1:NumObs)
+#{
+#  xmat=cbind(matrix(1,dim(x_t)[1],1), matrix(seq(1,dim(x_t)[1],1),dim(x_t)[1],1))
+#  linfit=solve(t(xmat)%*%xmat)%*%t(xmat)%*%x_t[,i]
+#  x_t[,i]=x_t[,i]-xmat%*%linfit
+#}
+#ts.plot(x_t[,20])
+
+
+#plot(x[,c(4,5)])
+
+# Redo Standardized #
+xmat = cbind(1,1:Ntime)
+linfit = solve(crossprod(xmat), crossprod(xmat,x_t))
+x_t = x_t - xmat %*% linfit
+
 ts.plot(x_t[,20])
 
-
 plot(x[,c(4,5)])
+
 
 
 
