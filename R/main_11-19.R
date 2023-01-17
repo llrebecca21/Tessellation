@@ -97,9 +97,14 @@ x[,4:(NumXT+2)]=apply(X = xx, MARGIN = 2, FUN = function(i) rep(i,each=Ntime))
 
 
 ## create time series x_t, abrupt change at x2, and at half time points
-ts.sim=matrix(rep(0,NumObs*Ntime),NumObs,Ntime)
-ts.sim1=matrix(rep(0,NumObs*Ntime/2),NumObs,Ntime/2)
-ts.sim2=matrix(rep(0,NumObs*Ntime/2),NumObs,Ntime/2)
+#ts.sim=matrix(rep(0,NumObs*Ntime),NumObs,Ntime)
+#ts.sim1=matrix(rep(0,NumObs*Ntime/2),NumObs,Ntime/2)
+#ts.sim2=matrix(rep(0,NumObs*Ntime/2),NumObs,Ntime/2)
+
+## Redo ts.sim, ts.sim1, ts.sim2 ##
+# ts.sim = matrix(data = 0, nrow = NumObs, ncol = Ntime)
+ts.sim1 = matrix(data = 0, nrow = Ntime/2, ncol = NumObs)
+ts.sim2 = matrix(data = 0, nrow = Ntime/2, ncol = NumObs)
 
 
 for(l in 1:NumObs)
