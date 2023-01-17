@@ -92,7 +92,8 @@ x$time=rep(1:Ntime,NumObs)
 x$scaled_time=range01(x$time)
 
 
-x[,4:(NumXT+2)]=apply(xx,2,function(i) rep(i,each=Ntime))
+# Repeat each row of xx 1000 times 
+x[,4:(NumXT+2)]=apply(X = xx, MARGIN = 2, FUN = function(i) rep(i,each=Ntime))
 
 
 ## create time series x_t, abrupt change at x2, and at half time points
