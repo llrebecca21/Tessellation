@@ -60,18 +60,27 @@ xx[18,]=c(0.7,0.7)
 xx[19,]=c(0.8,0.6)
 xx[20,]=c(0.8,0.8)
 
+# Redo code to create column names #
+x = matrix(data = 0, nrow = Ntime*NumObs, ncol = NumXT+2)
+# Create column names for x1 and x2
+xname = paste("x", 1:(NumX), sep = "")
+# Create name vector
+names = append(c("index", "time", "scaled_time"),xname)
+# change matrix x into a dataframe
+x = data.frame(x)
+# rename the columns of x
+colnames(x) = names
 
 
-
-x=matrix(0,Ntime*NumObs,NumXT+2)
-names=c("index","time","scaled_time")
-for(i in 1:NumX)
-{
-  xname=paste("x",i,sep = "")
-  names=append(names,xname)
-}
-x=data.frame(x)
-colnames(x)=names
+#x=matrix(0,Ntime*NumObs,NumXT+2)
+#names=c("index","time","scaled_time")
+#for(i in 1:NumX)
+#{
+#  xname=paste("x",i,sep = "")
+#  names=append(names,xname)
+#}
+#x=data.frame(x)
+#colnames(x)=names
 
 
 x$index=rep(1:NumObs,each=Ntime)
