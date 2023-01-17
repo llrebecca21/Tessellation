@@ -144,8 +144,8 @@ for(i in 1:NumObs)
 }
 
 
-ts.sim=cbind(ts.sim1,ts.sim2)  
-x_t=t(ts.sim)
+x_t = rbind(ts.sim1,ts.sim2)  
+
 
 
 
