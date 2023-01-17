@@ -1,5 +1,5 @@
 rm(list = ls())
-setwd("C:/Users/yakun_wang/Desktop/tessellation/code_project2")
+# setwd("C:/Users/yakun_wang/Desktop/tessellation/code_project2")
 source('M_lprior.R')
 source('tessellation_likelihood.R')
 source('time_interval.R')
@@ -8,7 +8,7 @@ source('effective_partition.R')
 Rcpp::sourceCpp('distance_partition.cpp')
 
 
-
+# Load required libraries
 library(pracma)
 library(trust)
 library(mvtnorm)
