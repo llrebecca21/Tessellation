@@ -1,3 +1,7 @@
+# Variables
+# freq : ((nfreq + 1) x 1) vector of frequency values
+# nbeta : numeric singular value
+
 lin_basis_func <- function(freq, nbeta)
   {
     n <- length(freq)
