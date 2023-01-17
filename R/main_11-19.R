@@ -369,15 +369,15 @@ for(i in 1:M)
   
   y = list()
   yy = list()
-  uu=0
+  uu = 0
   
-  for(i in prop_obs_index)
+  for(j in prop_obs_index)
   {
     uu = uu + 1
     
-    nfreq = floor(nseg_time_temp[l] / 2)
+    nfreq = floor(nseg_time_temp[j] / 2)
     
-    y[[uu]] = log(abs(fft(x_t[tmin[l]:tmax[l], l])) ^ 2 / nseg_time_temp[l])
+    y[[uu]] = log(abs(fft(x_t[tmin[j]:tmax[j], j])) ^ 2 / nseg_time_temp[j])
     yy[[uu]] = y[[uu]][1:(nfreq + 1)]
     
   }
