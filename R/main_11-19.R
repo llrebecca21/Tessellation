@@ -1,13 +1,5 @@
 rm(list = ls())
-# setwd("C:/Users/yakun_wang/Desktop/tessellation/code_project2")
-source('M_lprior.R')
-source('tessellation_likelihood.R')
-source('time_interval.R')
-source('MHstep_BFGS_11-19.R')
-source('effective_partition.R')
-Rcpp::sourceCpp('distance_partitionC_Lee.cpp.')
-Rcpp::sourceCpp('distance_partition.cpp')
-
+setwd("~/Tessellation")
 
 # Load required libraries
 library(pracma)
@@ -19,7 +11,18 @@ library(plotly)
 library(invgamma)
 library(gtools)
 library(forecast)
+library(RcppArmadillo)
 
+source('R/M_lprior.R')
+source('R/tessellation_likelihood.R')
+source('R/time_interval.R')
+# Get updated file!
+source('R/MHstep_BFGS_11-19.R')
+source('R/effective_partition.R')
+# Error
+Rcpp::sourceCpp('src/distance_partitionC_Lee.cpp')
+# Error
+Rcpp::sourceCpp('src/distance_partition.cpp')
 
 
 range01 <- function(x){(x-min(x))/(max(x)-min(x))}
@@ -312,7 +315,10 @@ M = 8 # Number of centers
 S = c(1250, 1750, 7250, 7750, 12250, 12750, 17250, 17750) # centers
 w = c(0.04190068, 0.63559150, 0.32250782) # weights
 
-prt = distance_partitionC(as.matrix(x[,-c(1,2)]),S,w)
+#prt = distance_partitionC(as.matrix(x[,-c(1,2)]),S,w)
+# call distance_partitionC_Lee updated function of distance_partitionC
+prt = distance_partitionC_Lee(X = as.matrix(x[ ,-c(1,2)]), centers = S, weights = w)
+# call time_interval function
 interval_curr = time_interval(x,S,prt,NumObs)
 
 # Max number of tessellation
