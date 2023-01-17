@@ -307,61 +307,41 @@ plot(x[,c(4,5)])
 ##################################################
 set.seed(2333)
 
-
 ## Initialization of tessellation
-M=8 # Number of centers
-S=c(1250,1750,7250,7750,12250,12750,17250,17750)
-w=c(0.04190068, 0.63559150, 0.32250782)
+M = 8 # Number of centers
+S = c(1250, 1750, 7250, 7750, 12250, 12750, 17250, 17750) # centers
+w = c(0.04190068, 0.63559150, 0.32250782) # weights
 
-
-# s_num=seq(5,995,by=(1000-1)/(10-1))
-# s2=s_num+1000
-# s8=s_num+7000
-# s13=s_num+12000
-# s18=s_num+17000
-# 
-# 
-# S=c(s2,s8,s13,s18)
-# w=c(0.07359252, 0.46466762, 0.46173986)
-
-
-
-prt=distance_partitionC(as.matrix(x[,-c(1,2)]),S,w)
-interval_curr=time_interval(x,S,prt,NumObs)
-
+prt = distance_partitionC(as.matrix(x[,-c(1,2)]),S,w)
+interval_curr = time_interval(x,S,prt,NumObs)
 
 # Max number of tessellation
-Mmax=10
+Mmax = 10
 
 # Tmin
-Tmin=50
-
-
+Tmin = 50
 
 ## MCMC parameters
-nbasis=7
-nbeta=nbasis+1
-sigmasqalpha=100
-
-
+nbasis = 7
+nbeta = nbasis + 1
+sigmasqalpha = 100
 
 # Initialization of half-t distribution
-tau=rep(10,M)
-g=rep(1,M)
+tau = rep(10,M)
+g = rep(1,M)
 
-
-nus=10 #2
-Gs=2 #10
-param_random=0.2
-nb_alpha=nbeta
-
-
+# why did she change nus and Gs around from original code?
+nus = 10 #2
+Gs = 2 #10
+param_random = 0.2
+nb_alpha = nbeta
 
 ## calculate log power spectrum
-nfreq=50  # fixed the number of Fourier frequencies
-freq <- (0:nfreq)/(2 * nfreq)
-nu_mat <- lin_basis_func(freq, nbeta)
-fhat_prop=matrix(0,(nfreq+1),M)
+nfreq = 50  # fixed the number of Fourier frequencies
+freq = (0:nfreq) / (2 * nfreq)
+# call lin_basis_func
+nu_mat = lin_basis_func(freq = freq, nbeta = nbeta)
+fhat_prop = matrix(data = 0, nrow = (nfreq + 1), ncol = M)
 
 
 
