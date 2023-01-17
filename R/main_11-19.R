@@ -210,21 +210,16 @@ xx[18,]=c(0.7,0.7)
 xx[19,]=c(0.8,0.6)
 xx[20,]=c(0.8,0.8)
 
-
-
-
-
-
-
-#x = matrix(0,Ntime*NumObs,NumXT+2)
-#names=c("index","time","scaled_time")
-#for(i in 1:NumX)
-#{
-#  xname=paste("x",i,sep = "")
-#  names=append(names,xname)
-#}
-#x=data.frame(x)
-#colnames(x)=names
+# Redo code to create column names #
+x = matrix(data = 0, nrow = Ntime*NumObs, ncol = NumXT+2)
+# Create column names for x1 and x2
+xname = paste("x", 1:(NumX), sep = "")
+# Create name vector
+names = append(c("index", "time", "scaled_time"),xname)
+# change matrix x into a dataframe
+x = data.frame(x)
+# rename the columns of x
+colnames(x) = names
 
 # Fill in the columns of x #
 # replace index with 1:20 with each repeated 1_000 times
@@ -328,24 +323,32 @@ for(i in 1:NumObs)
   }
 }
 
+# transpose the resulting time series x_t
+x_t = t(ts.sim)
 
-x_t=t(ts.sim)
-
-
+# dimensions of x_t 
+# nrow(x_t) = 1000
+# ncol(x_t) = 20 
 
 # standardized
-for (i in 1:NumObs)
-{
-  xmat=cbind(matrix(1,dim(x_t)[1],1), matrix(seq(1,dim(x_t)[1],1),dim(x_t)[1],1))
-  linfit=solve(t(xmat)%*%xmat)%*%t(xmat)%*%x_t[,i]
-  x_t[,i]=x_t[,i]-xmat%*%linfit
-}
-ts.plot(x_t[,1])
+#for (i in 1:NumObs)
+#{
+#  xmat=cbind(matrix(1, nrow(x_t), 1), matrix(seq(1, nrow(x_t), 1), nrow(x_t), 1))
+#  linfit=solve(t(xmat)%*%xmat)%*%t(xmat)%*%x_t[,i]
+#  x_t[,i]=x_t[,i]-xmat%*%linfit
+#}
+#ts.plot(x_t[,1])
+#plot(x[,c(4,5)])
 
+
+# Redo Standardized #
+xmat = cbind(1,1:Ntime)
+linfit = solve(crossprod(xmat), crossprod(xmat,x_t))
+x_t = x_t - xmat %*% linfit
+
+ts.plot(x_t[,20])
 
 plot(x[,c(4,5)])
-
-
 
 
 
