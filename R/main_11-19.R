@@ -246,12 +246,12 @@ e=matrix(rnorm(NumObs*Ntime,0,sd_true),NumObs,Ntime)
 ts.sim=matrix(0,NumObs,Ntime)
 
 
-for(l in 1:NumObs)
+for(i in 1:NumObs)
 {
-  if(xx[l,1]<0.5)
+  if(xx[i,1]<0.5)
   {
     
-    if(xx[l,2]<0.5)
+    if(xx[i,2]<0.5)
     {
       # slowly varying -0.3 to 0.3
       phi_true=-0.3+((1:Ntime)/Ntime)*0.6
@@ -259,11 +259,11 @@ for(l in 1:NumObs)
       {
         if (j==1)
         {
-          ts.sim[l,j]=e[l,j]
+          ts.sim[i,j]=e[i,j]
           
         }else
         {
-          ts.sim[l,j]=phi_true[j]*ts.sim[l,j-1]+e[l,j]
+          ts.sim[i,j]=phi_true[j]*ts.sim[i,j-1]+e[i,j]
         }
         
       }
@@ -277,11 +277,11 @@ for(l in 1:NumObs)
       {
         if (j==1)
         {
-          ts.sim[l,j]=e[l,j]
+          ts.sim[i,j]=e[i,j]
           
         }else
         {
-          ts.sim[l,j]=phi_true[j]*ts.sim[l,j-1]+e[l,j]
+          ts.sim[i,j]=phi_true[j]*ts.sim[i,j-1]+e[i,j]
         }
       } 
       
@@ -290,7 +290,7 @@ for(l in 1:NumObs)
     
   }else{
     
-    if(xx[l,2]<0.5)
+    if(xx[i,2]<0.5)
     {
       
       # slowly varying from 0.7 to -0.7
@@ -299,11 +299,11 @@ for(l in 1:NumObs)
       {
         if (j==1)
         {
-          ts.sim[l,j]=e[l,j]
+          ts.sim[i,j]=e[i,j]
           
         }else
         {
-          ts.sim[l,j]=phi_true[j]*ts.sim[l,j-1]+e[l,j]
+          ts.sim[i,j]=phi_true[j]*ts.sim[i,j-1]+e[i,j]
         }
       } 
       
@@ -315,11 +315,11 @@ for(l in 1:NumObs)
       {
         if (j==1)
         {
-          ts.sim[l,j]=e[l,j]
+          ts.sim[i,j]=e[i,j]
           
         }else
         {
-          ts.sim[l,j]=phi_true[j]*ts.sim[l,j-1]+e[l,j]
+          ts.sim[i,j]=phi_true[j]*ts.sim[i,j-1]+e[i,j]
         }
       } 
       
