@@ -213,22 +213,31 @@ xx[20,]=c(0.8,0.8)
 
 
 
-x=matrix(0,Ntime*NumObs,NumXT+2)
-names=c("index","time","scaled_time")
-for(i in 1:NumX)
-{
-  xname=paste("x",i,sep = "")
-  names=append(names,xname)
-}
-x=data.frame(x)
-colnames(x)=names
 
 
+
+#x = matrix(0,Ntime*NumObs,NumXT+2)
+#names=c("index","time","scaled_time")
+#for(i in 1:NumX)
+#{
+#  xname=paste("x",i,sep = "")
+#  names=append(names,xname)
+#}
+#x=data.frame(x)
+#colnames(x)=names
+
+# Fill in the columns of x #
+# replace index with 1:20 with each repeated 1_000 times
 x$index=rep(1:NumObs,each=Ntime)
+# replace time with 1:1000 repeated 20 times
 x$time=rep(1:Ntime,NumObs)
+# replace scaled_time with proportion of length completed; repeats each 1_000 index  
 x$scaled_time=range01(x$time)
 
-x[,4:(NumXT+2)]=apply(xx,2,function(i) rep(i,each=Ntime))
+
+# Repeat each row of xx 1000 times 
+x[,4:(NumXT+2)]=apply(X = xx, MARGIN = 2, FUN = function(i) rep(i,each=Ntime))
+
 
 
 ## create slowly change of time series x_t, abrupt change at X1, x2
