@@ -315,7 +315,6 @@ M = 8 # Number of centers
 S = c(1250, 1750, 7250, 7750, 12250, 12750, 17250, 17750) # centers
 w = c(0.04190068, 0.63559150, 0.32250782) # weights
 
-#prt = distance_partitionC(as.matrix(x[,-c(1,2)]),S,w)
 # call distance_partitionC_Lee updated function of distance_partitionC
 prt = distance_partitionC_Lee(X = as.matrix(x[ ,-c(1,2)]), centers = S, weights = w)
 # call time_interval function
@@ -351,65 +350,65 @@ fhat_prop = matrix(data = 0, nrow = (nfreq + 1), ncol = M)
 
 
 
-loglike=rep(0,M)
-log_beta=rep(0,M)
-beta_lprior=rep(0,M)
-beta_prop=matrix(0,M,nbeta)
+loglike = rep(0,M)
+log_beta = rep(0,M)
+beta_lprior = rep(0,M)
+beta_prop = matrix(data = 0, nrow = M, ncol = nbeta)
 
 
 # update beta and loglike
 for(i in 1:M)
 {
-  prop_obs=x[which(prt==i),]
-  prop_obs_index=unique(prop_obs$index)
+  prop_obs = x[which(prt==i), ]
+  prop_obs_index = unique(prop_obs$index)
   
   # create log periodograms for replications in ith time seg and jth cov seg
-  nseg_time_temp=interval_curr$interval[i,]
-  tmin=interval_curr$tmin[i,]
-  tmax=interval_curr$tmax[i,]
+  nseg_time_temp = interval_curr$interval[i,]
+  tmin = interval_curr$tmin[i,]
+  tmax = interval_curr$tmax[i,]
   
-  y <- list()
-  yy <- list()
+  y = list()
+  yy = list()
   uu=0
   
-  for(l in prop_obs_index)
+  for(i in prop_obs_index)
   {
-    uu=uu+1
+    uu = uu + 1
     
-    nfreq <- floor(nseg_time_temp[l] / 2)
+    nfreq = floor(nseg_time_temp[l] / 2)
     
-    y[[uu]] <- log(abs(fft(x_t[tmin[l]:tmax[l], l])) ^ 2 / nseg_time_temp[l])
-    yy[[uu]] <- y[[uu]][1:(nfreq + 1)]
+    y[[uu]] = log(abs(fft(x_t[tmin[l]:tmax[l], l])) ^ 2 / nseg_time_temp[l])
+    yy[[uu]] = y[[uu]][1:(nfreq + 1)]
     
   }
   
   
   # initial beta
-  param=rep(0,nbeta)
+  param = rep(0,nbeta)
   
   
   # BFGS
   postbeta_BFGS <- optim(param,fn, gr, method="BFGS", prop_obs_index, interval_curr$interval[i,], yy, tau[i], nbeta, nbasis, sigmasqalpha)
-  Q=he(postbeta_BFGS$par,prop_obs_index, interval_curr$interval[i,], yy, tau[i], nbeta, nbasis, sigmasqalpha)
-  Lt=chol(Q)
+  Q = he(postbeta_BFGS$par,prop_obs_index, interval_curr$interval[i,], yy, tau[i], nbeta, nbasis, sigmasqalpha)
+  Lt = chol(Q)
   
   
   ### sampling
-  beta_prop[i,]=Chol_sampling(Lt,nbeta,postbeta_BFGS$par)
+  beta_prop[i,] = Chol_sampling(Lt,nbeta,postbeta_BFGS$par)
   
   ## Density
-  log_beta[i]=Chol_density(beta_prop[i,],Lt,nbeta,postbeta_BFGS$par)
+  log_beta[i] = Chol_density(beta_prop[i,],Lt,nbeta,postbeta_BFGS$par)
   
   
   
   ## prior density
-  beta_lprior[i]=dmvnorm(beta_prop[i,],matrix(0,nbeta,1),diag(c(sigmasqalpha, tau[i]*matrix(1,nbasis,1))),log = T) # Prior Density of beta
+  beta_lprior[i] = dmvnorm(beta_prop[i,],matrix(0,nbeta,1),diag(c(sigmasqalpha, tau[i]*matrix(1,nbasis,1))),log = T) # Prior Density of beta
   
   
   # estimated log of power spectrum and Whittlelikelihood
-  fhat_prop[,i]=nu_mat%*%matrix(beta_prop[i,],nbeta,1)
-  log_prop_spec_dens=whittle_like(y,prop_obs_index,interval_curr$interval[i,],beta_prop[i,],nbasis) # Loglikelihood  at proposed values
-  loglike[i]=log_prop_spec_dens
+  fhat_prop[,i] = nu_mat%*%matrix(beta_prop[i,],nbeta,1)
+  log_prop_spec_dens = whittle_like(y,prop_obs_index,interval_curr$interval[i,],beta_prop[i,],nbasis) # Loglikelihood  at proposed values
+  loglike[i] = log_prop_spec_dens
   
   
 }
@@ -417,12 +416,12 @@ for(i in 1:M)
 
 
 ## New prior of tessellation
-p=NumXT
-n=dim(x)[1]
-log_M_prior=M_lprior(n,p,M,Mmax)
+p = NumXT
+n = nrow(x)
+log_M_prior = M_lprior(n,p,M,Mmax)
 
 ### current tessellation structure
-TT=list("S"=S,"M"=M,"w"=w,"loglike"=loglike,"beta"=beta_prop,"tau"=tau,"g"=g,"log_beta"=log_beta,"M_lprior"=log_M_prior,"beta_lprior"=beta_lprior,"fhat_prop"=fhat_prop,"prt"=prt)
+TT = list("S" = S,"M" = M,"w" = w,"loglike" = loglike,"beta" = beta_prop,"tau" = tau,"g" = g,"log_beta" = log_beta,"M_lprior" = log_M_prior,"beta_lprior" = beta_lprior,"fhat_prop" = fhat_prop,"prt" = prt)
 
 
 
