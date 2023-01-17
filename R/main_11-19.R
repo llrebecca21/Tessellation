@@ -5,6 +5,7 @@ source('tessellation_likelihood.R')
 source('time_interval.R')
 source('MHstep_BFGS_11-19.R')
 source('effective_partition.R')
+Rcpp::sourceCpp('distance_partitionC_Lee.cpp.')
 Rcpp::sourceCpp('distance_partition.cpp')
 
 
