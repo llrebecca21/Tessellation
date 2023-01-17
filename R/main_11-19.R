@@ -241,29 +241,29 @@ x[,4:(NumXT+2)]=apply(X = xx, MARGIN = 2, FUN = function(i) rep(i,each=Ntime))
 
 
 ## create slowly change of time series x_t, abrupt change at X1, x2
-sd_true=1
-e=matrix(rnorm(NumObs*Ntime,0,sd_true),NumObs,Ntime)
-ts.sim=matrix(0,NumObs,Ntime)
+sd_true = 1
+e = matrix(data = rnorm(n = NumObs * Ntime, mean = 0, sd = sd_true), nrow = NumObs, ncol = Ntime)
+ts.sim = matrix(data = 0, nrow = NumObs, ncol = Ntime)
 
 
 for(i in 1:NumObs)
 {
-  if(xx[i,1]<0.5)
+  if(xx[i,1] < 0.5)
   {
     
-    if(xx[i,2]<0.5)
+    if(xx[i,2] < 0.5)
     {
       # slowly varying -0.3 to 0.3
-      phi_true=-0.3+((1:Ntime)/Ntime)*0.6
+      phi_true = -0.3 + ((1:Ntime) / Ntime) * 0.6
       for (j in 1:Ntime)
       {
         if (j==1)
         {
-          ts.sim[i,j]=e[i,j]
+          ts.sim[i,j] = e[i,j]
           
         }else
         {
-          ts.sim[i,j]=phi_true[j]*ts.sim[i,j-1]+e[i,j]
+          ts.sim[i,j] = phi_true[j] * ts.sim[i,j-1] + e[i,j]
         }
         
       }
