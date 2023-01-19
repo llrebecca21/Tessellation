@@ -327,8 +327,11 @@ Mmax = 10
 Tmin = 50
 
 ## MCMC parameters
+# nbasis stores number of basis functions
 nbasis = 7
+# nbeta stores number of beta values (8)
 nbeta = nbasis + 1
+# str(nbeta)
 sigmasqalpha = 100
 
 # Initialization of half-t distribution
@@ -343,9 +346,12 @@ nb_alpha = nbeta
 
 ## calculate log power spectrum
 nfreq = 50  # fixed the number of Fourier frequencies
+# create vector (51 x 1) freq that stores the frequency values
 freq = (0:nfreq) / (2 * nfreq)
+# str(freq)
 # call lin_basis_func
 nu_mat = lin_basis_func(freq = freq, nbeta = nbeta)
+
 fhat_prop = matrix(data = 0, nrow = (nfreq + 1), ncol = M)
 
 
