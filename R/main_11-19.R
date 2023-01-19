@@ -93,36 +93,36 @@ x[,4:(NumXT+2)] = apply(X = xx, MARGIN = 2, FUN = function(i) rep(i,each=Ntime))
 ts.sim1 = matrix(data = 0, nrow = NumObs, ncol = Ntime/2)
 ts.sim2 = matrix(data = 0, nrow = NumObs, ncol = Ntime/2)
 
-for(l in 1:NumObs)
+for(i in 1:NumObs)
 {
-  if(xx[l,1]<0.5)
+  if(xx[i,1]<0.5)
   {
     
-    if(xx[l,2]<0.5)
+    if(xx[i,2]<0.5)
     {
-      ts.sim1[l,]=arima.sim(list(order=c(1,0,0),ar=0.3),n=Ntime/2)
-      ts.sim2[l,]=arima.sim(list(order=c(1,0,0),ar=-0.5),n=Ntime/2)
+      ts.sim1[i,]=arima.sim(list(order=c(1,0,0),ar=0.3),n=Ntime/2)
+      ts.sim2[i,]=arima.sim(list(order=c(1,0,0),ar=-0.5),n=Ntime/2)
       
     }else{
       
-      ts.sim1[l,]=arima.sim(list(order=c(1,0,0),ar=-0.9),n=Ntime/2)
-      ts.sim2[l,]=arima.sim(list(order=c(1,0,0),ar=0.7),n=Ntime/2)
+      ts.sim1[i,]=arima.sim(list(order=c(1,0,0),ar=-0.9),n=Ntime/2)
+      ts.sim2[i,]=arima.sim(list(order=c(1,0,0),ar=0.7),n=Ntime/2)
       
     }
     
     
   }else{
     
-    if(xx[l,2]<0.5)
+    if(xx[i,2]<0.5)
     {
       
-      ts.sim1[l,]=arima.sim(list(order=c(1,0,0),ar=-0.3),n=Ntime/2)
-      ts.sim2[l,]=arima.sim(list(order=c(1,0,0),ar=0.5),n=Ntime/2)
+      ts.sim1[i,]=arima.sim(list(order=c(1,0,0),ar=-0.3),n=Ntime/2)
+      ts.sim2[i,]=arima.sim(list(order=c(1,0,0),ar=0.5),n=Ntime/2)
       
     }else{
       
-      ts.sim1[l,]=arima.sim(list(order=c(1,0,0),ar=0.9),n=Ntime/2)
-      ts.sim2[l,]=arima.sim(list(order=c(1,0,0),ar=-0.7),n=Ntime/2)
+      ts.sim1[i,]=arima.sim(list(order=c(1,0,0),ar=0.9),n=Ntime/2)
+      ts.sim2[i,]=arima.sim(list(order=c(1,0,0),ar=-0.7),n=Ntime/2)
       
     }
     
