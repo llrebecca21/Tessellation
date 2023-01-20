@@ -140,10 +140,10 @@ for(i in 1:NumObs)
   }
 }
 
-
+# column bind and transpose the resulting two time series created above
 x_t = t(cbind(ts.sim1, ts.sim2))  
 
-# Redo Standardized #
+# Standardized #
 xmat = cbind(1,1:Ntime)
 linfit = solve(crossprod(xmat), crossprod(xmat,x_t))
 x_t = x_t - xmat %*% linfit
@@ -151,7 +151,7 @@ x_t = x_t - xmat %*% linfit
 ts.plot(x_t[,20])
 
 plot(x[,c(4,5)])
-# Code matches Yakun's up until this point
+# Code output matches Yakun's up until this point
 
 ###################################
 # slowly-abrupt simulate data
@@ -159,36 +159,36 @@ plot(x[,c(4,5)])
 
 set.seed(1080)
 # Set variables
-Ntime=1000
-NumX=2
-NumXT=NumX+1
-NumObs=20
+Ntime = 1000
+NumX = 2
+NumXT = NumX+1
+NumObs = 20
 
 ## create covariates matrix of x
-xx=matrix(0,NumObs,NumX)
+xx = matrix(0,NumObs,NumX)
 
 
 ## True S is 2,8,13,18
-xx[1,]=c(0.2,0.4)
-xx[2,]=c(0.3,0.3)
-xx[3,]=c(0.4,0.2)
-xx[4,]=c(0.2,0.2)
-xx[5,]=c(0.4,0.4)
-xx[6,]=c(0.2,0.6)  
-xx[7,]=c(0.2,0.8)
-xx[8,]=c(0.3,0.7)  
-xx[9,]=c(0.4,0.6)  
-xx[10,]=c(0.4,0.8)  
-xx[11,]=c(0.6,0.2)  
-xx[12,]=c(0.6,0.4)  
-xx[13,]=c(0.7,0.3)
-xx[14,]=c(0.8,0.2)
-xx[15,]=c(0.8,0.4)
-xx[16,]=c(0.6,0.6)
-xx[17,]=c(0.6,0.8)
-xx[18,]=c(0.7,0.7)
-xx[19,]=c(0.8,0.6)
-xx[20,]=c(0.8,0.8)
+xx[1,] = c(0.2,0.4)
+xx[2,] = c(0.3,0.3)
+xx[3,] = c(0.4,0.2)
+xx[4,] = c(0.2,0.2)
+xx[5,] = c(0.4,0.4)
+xx[6,] = c(0.2,0.6)  
+xx[7,] = c(0.2,0.8)
+xx[8,] = c(0.3,0.7)  
+xx[9,] = c(0.4,0.6)  
+xx[10,] = c(0.4,0.8)  
+xx[11,] = c(0.6,0.2)  
+xx[12,] = c(0.6,0.4)  
+xx[13,] = c(0.7,0.3)
+xx[14,] = c(0.8,0.2)
+xx[15,] = c(0.8,0.4)
+xx[16,] = c(0.6,0.6)
+xx[17,] = c(0.6,0.8)
+xx[18,] = c(0.7,0.7)
+xx[19,] = c(0.8,0.6)
+xx[20,] = c(0.8,0.8)
 
 # Redo code to create column names #
 x = matrix(data = 0, nrow = Ntime*NumObs, ncol = NumXT+2)
