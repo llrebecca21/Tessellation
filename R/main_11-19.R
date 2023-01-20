@@ -272,20 +272,19 @@ for (i in 1:NumObs)
     }
   }
 }
-
 # transpose the resulting time series x_t
-x_t = t(ts.sim)
+x_t <- t(ts.sim)
 
-# Redo Standardized #
-xmat = cbind(1,1:Ntime)
-linfit = solve(crossprod(xmat), crossprod(xmat,x_t))
-x_t = x_t - xmat %*% linfit
+# Standardize x_t #
+xmat <- cbind(1, 1:Ntime)
+linfit <- solve(crossprod(xmat), crossprod(xmat, x_t))
+x_t <- x_t - xmat %*% linfit
 
 # plot the time series
-ts.plot(x_t[,20])
+ts.plot(x_t[, 20])
 
 # plot portion of x
-plot(x[,c(4,5)])
+plot(x[, c(4, 5)])
 
 ###############################################
 #  Hyperparameters for tessellation partition
