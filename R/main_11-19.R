@@ -27,11 +27,22 @@ source('R/effective_partition.R')
 
 range01 <- function(x){(x-min(x))/(max(x)-min(x))}
 
+##################
+# Code Directory
+##################
+# Abrupt-abrupt simulate data : lines ...
+# Slowly-abrupt simulate data : lines ...
+# Hyperparameters for tessellation partition : lines ...
+# MCMC : lines ...
+# Plot of Mean of Posterior : lines ...
+# Diagnostics : lines ...
+# Sum of Squared Distances : lines ...
 
 ###################################
 # Abrupt-abrupt simulate data
 #################################
 set.seed(1080)
+# Define variables
 Ntime = 1000
 NumX = 2
 NumXT = NumX+1
@@ -95,34 +106,34 @@ ts.sim2 = matrix(data = 0, nrow = NumObs, ncol = Ntime/2)
 
 for(i in 1:NumObs)
 {
-  if(xx[i,1]<0.5)
+  if(xx[i,1] < 0.5)
   {
     
-    if(xx[i,2]<0.5)
+    if(xx[i,2] < 0.5)
     {
-      ts.sim1[i,]=arima.sim(list(order=c(1,0,0),ar=0.3),n=Ntime/2)
-      ts.sim2[i,]=arima.sim(list(order=c(1,0,0),ar=-0.5),n=Ntime/2)
+      ts.sim1[i,] = arima.sim(list(order = c(1,0,0), ar = 0.3), n = Ntime/2)
+      ts.sim2[i,] = arima.sim(list(order = c(1,0,0), ar = -0.5), n = Ntime/2)
       
     }else{
       
-      ts.sim1[i,]=arima.sim(list(order=c(1,0,0),ar=-0.9),n=Ntime/2)
-      ts.sim2[i,]=arima.sim(list(order=c(1,0,0),ar=0.7),n=Ntime/2)
+      ts.sim1[i,] = arima.sim(list(order = c(1,0,0), ar = -0.9), n = Ntime/2)
+      ts.sim2[i,] = arima.sim(list(order = c(1,0,0), ar = 0.7), n = Ntime/2)
       
     }
     
     
   }else{
     
-    if(xx[i,2]<0.5)
+    if(xx[i,2] < 0.5)
     {
       
-      ts.sim1[i,]=arima.sim(list(order=c(1,0,0),ar=-0.3),n=Ntime/2)
-      ts.sim2[i,]=arima.sim(list(order=c(1,0,0),ar=0.5),n=Ntime/2)
+      ts.sim1[i,] = arima.sim(list(order = c(1,0,0), ar = -0.3), n = Ntime/2)
+      ts.sim2[i,] = arima.sim(list(order = c(1,0,0), ar = 0.5), n = Ntime/2)
       
     }else{
       
-      ts.sim1[i,]=arima.sim(list(order=c(1,0,0),ar=0.9),n=Ntime/2)
-      ts.sim2[i,]=arima.sim(list(order=c(1,0,0),ar=-0.7),n=Ntime/2)
+      ts.sim1[i,] = arima.sim(list(order = c(1,0,0), ar = 0.9), n = Ntime/2)
+      ts.sim2[i,] = arima.sim(list(order = c(1,0,0), ar = -0.7), n = Ntime/2)
       
     }
     
@@ -130,7 +141,7 @@ for(i in 1:NumObs)
 }
 
 
-x_t = t(cbind(ts.sim1,ts.sim2))  
+x_t = t(cbind(ts.sim1, ts.sim2))  
 
 # Redo Standardized #
 xmat = cbind(1,1:Ntime)
@@ -140,12 +151,14 @@ x_t = x_t - xmat %*% linfit
 ts.plot(x_t[,20])
 
 plot(x[,c(4,5)])
+# Code matches Yakun's up until this point
 
 ###################################
 # slowly-abrupt simulate data
 #################################
 
 set.seed(1080)
+# Set variables
 Ntime=1000
 NumX=2
 NumXT=NumX+1
