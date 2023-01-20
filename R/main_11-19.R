@@ -203,11 +203,11 @@ colnames(x) = names
 
 # Fill in the columns of x #
 # replace index with 1:20 with each repeated 1_000 times
-x$index=rep(1:NumObs,each=Ntime)
+x$index = rep(1:NumObs,each=Ntime)
 # replace time with 1:1000 repeated 20 times
-x$time=rep(1:Ntime,NumObs)
+x$time = rep(1:Ntime,NumObs)
 # replace scaled_time with proportion of length completed; repeats each 1_000 index  
-x$scaled_time=range01(x$time)
+x$scaled_time = range01(x$time)
 
 
 # Repeat each row of xx 1000 times 
@@ -220,86 +220,56 @@ sd_true = 1
 e = matrix(data = rnorm(n = NumObs * Ntime, mean = 0, sd = sd_true), nrow = NumObs, ncol = Ntime)
 ts.sim = matrix(data = 0, nrow = NumObs, ncol = Ntime)
 
-
-for(i in 1:NumObs)
+for (i in 1:NumObs)
 {
-  if(xx[i,1] < 0.5)
-  {
-    
-    if(xx[i,2] < 0.5)
-    {
+  if (xx[i, 1] < 0.5) {
+    if (xx[i, 2] < 0.5) {
       # slowly varying -0.3 to 0.3
-      phi_true = -0.3 + ((1:Ntime) / Ntime) * 0.6
+      phi_true <- -0.3 + ((1:Ntime) / Ntime) * 0.6
       for (j in 1:Ntime)
       {
-        if (j==1)
-        {
-          ts.sim[i,j] = e[i,j]
-          
-        }else
-        {
-          ts.sim[i,j] = phi_true[j] * ts.sim[i,j-1] + e[i,j]
+        if (j == 1) {
+          ts.sim[i, j] <- e[i, j]
+        } else {
+          ts.sim[i, j] <- phi_true[j] * ts.sim[i, j - 1] + e[i, j]
         }
-        
       }
-      
-      
-    }else{
-      
+    } else {
       # slowly varying from 0.9 to -0.9
-      phi_true=0.9-((1:Ntime)/Ntime)*1.8
+      phi_true <- 0.9 - ((1:Ntime) / Ntime) * 1.8
       for (j in 1:Ntime)
       {
-        if (j==1)
-        {
-          ts.sim[i,j]=e[i,j]
-          
-        }else
-        {
-          ts.sim[i,j]=phi_true[j]*ts.sim[i,j-1]+e[i,j]
+        if (j == 1) {
+          ts.sim[i, j] <- e[i, j]
+        } else {
+          ts.sim[i, j] <- phi_true[j] * ts.sim[i, j - 1] + e[i, j]
         }
-      } 
-      
+      }
     }
-    
-    
-  }else{
-    
-    if(xx[i,2]<0.5)
-    {
-      
+  } else {
+    if (xx[i, 2] < 0.5) {
       # slowly varying from 0.7 to -0.7
-      phi_true=0.7-((1:Ntime)/Ntime)*1.4
+      phi_true <- 0.7 - ((1:Ntime) / Ntime) * 1.4
       for (j in 1:Ntime)
       {
-        if (j==1)
-        {
-          ts.sim[i,j]=e[i,j]
-          
-        }else
-        {
-          ts.sim[i,j]=phi_true[j]*ts.sim[i,j-1]+e[i,j]
+        if (j == 1) {
+          ts.sim[i, j] <- e[i, j]
+        } else {
+          ts.sim[i, j] <- phi_true[j] * ts.sim[i, j - 1] + e[i, j]
         }
-      } 
-      
-    }else{
-      
+      }
+    } else {
       # slowly varying from -0.5 to 0.5
-      phi_true=-0.5+((1:Ntime)/Ntime)
+      phi_true <- -0.5 + ((1:Ntime) / Ntime)
       for (j in 1:Ntime)
       {
-        if (j==1)
-        {
-          ts.sim[i,j]=e[i,j]
-          
-        }else
-        {
-          ts.sim[i,j]=phi_true[j]*ts.sim[i,j-1]+e[i,j]
+        if (j == 1) {
+          ts.sim[i, j] <- e[i, j]
+        } else {
+          ts.sim[i, j] <- phi_true[j] * ts.sim[i, j - 1] + e[i, j]
         }
-      } 
-      
+      }
     }
-    
   }
 }
 
