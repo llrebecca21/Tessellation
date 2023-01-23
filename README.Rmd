@@ -1,6 +1,8 @@
 ---
 title: "Tessellation README"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 date: "2023-01-23"
 ---
 
@@ -10,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Abrupt-Abrupt Simulate Data
 
-The simulated data for the twenty abrupt-abrupt time series begins with creating a matrix ($20 \times 2$), whose points will determine the $\phi$ values for the simulated time series. The plot below shows the plot of this matrix. This matrix is used as a "Lookup Table" for the parameters used in generating these time series.
+The simulated twenty abrupt-abrupt time series begins with creating a matrix ($20 \times 2$). Each row in the matrix will be used to determine the $\phi$ values for the simulated time series. The plot below shows this matrix. This matrix is used as a "Lookup Table" for the parameters in generating these time series.
 
 ```{r, echo = FALSE, message = FALSE}
 source("SetUpSim1.R")
