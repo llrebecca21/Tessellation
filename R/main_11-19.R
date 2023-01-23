@@ -117,11 +117,12 @@ for(i in 1:NumObs)
     
     if(xx[i,2] < 0.5)
     {
+      # Both xx1 and xx2 are below 0.5
       ts.sim1[i,] = arima.sim(list(order = c(1,0,0), ar = 0.3), n = Ntime/2)
       ts.sim2[i,] = arima.sim(list(order = c(1,0,0), ar = -0.5), n = Ntime/2)
       
     }else{
-      
+      # xx1 is below 0.5, xx2 is above 0.5
       ts.sim1[i,] = arima.sim(list(order = c(1,0,0), ar = -0.9), n = Ntime/2)
       ts.sim2[i,] = arima.sim(list(order = c(1,0,0), ar = 0.7), n = Ntime/2)
       
@@ -132,12 +133,12 @@ for(i in 1:NumObs)
     
     if(xx[i,2] < 0.5)
     {
-      
+      # xx1 is above 0.5, and xx2 is below 0.5
       ts.sim1[i,] = arima.sim(list(order = c(1,0,0), ar = -0.3), n = Ntime/2)
       ts.sim2[i,] = arima.sim(list(order = c(1,0,0), ar = 0.5), n = Ntime/2)
       
     }else{
-      
+      # xx1 is above 0.5, and xx2 is above 0.5
       ts.sim1[i,] = arima.sim(list(order = c(1,0,0), ar = 0.9), n = Ntime/2)
       ts.sim2[i,] = arima.sim(list(order = c(1,0,0), ar = -0.7), n = Ntime/2)
       
