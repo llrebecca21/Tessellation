@@ -83,7 +83,7 @@ plot(xx, main = "Plot of Covariances")
 # Redo code to create column names # 20_000 x 5
 x = matrix(data = 0, nrow = Ntime*NumObs, ncol = NumXT+2)
 nrow(x) # 20_000
-# Create column names for x1 and x2
+# Create column names for x1 and x2 
 xname = paste("x", 1:(NumX), sep = "")
 # Create name vector
 names = append(c("index", "time", "scaled_time"),xname)
@@ -147,8 +147,6 @@ for(i in 1:NumObs)
   }
 }
 
-#ts.plot(arima.sim(list(order = c(1,0,0), ar = -0.7), n = Ntime/2))
-
 # column bind and transpose the resulting two time series created above
 x_t = t(cbind(ts.sim1, ts.sim2))  
 
@@ -157,13 +155,9 @@ xmat = cbind(1,1:Ntime)
 linfit = solve(crossprod(xmat), crossprod(xmat,x_t))
 x_t = x_t - xmat %*% linfit
 
-# Plot the 20th time series simulated to check
+# Plot the 20th time series simulated to check code
 # All plots are in abrupt_abrupt_simplots.R
 ts.plot(x_t[,20])
-
-
-# plot(x[,c(4,5)])
-
 
 # Code output matches Yakun's up until this point
 
