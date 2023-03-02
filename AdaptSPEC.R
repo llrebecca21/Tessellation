@@ -42,8 +42,19 @@ ts.plot(sim_1)
 abline(v = new_xi, col = "blue", lty = 2)
 
 
+# Write a function that does the steps above
+move_xi <- function(xi, tmin){
+  # take the xi and make a copy
+  new_xi = xi
+  # randomly choose a xi index
+  m = length(xi) - 1 
+  rand_xi = sample(m-1 , 1) + 1
+  # move the randomly chosen xi to a new location conditional on tmin
+  new_xi[rand_xi] = sample(seq(xi[rand_xi - 1] + tmin , xi[rand_xi + 1] - tmin, 1), 1)
+  return(new_xi)
+}
 
-
+cbind(xi, move_xi(xi, tmin = tmin))
 
 
 
