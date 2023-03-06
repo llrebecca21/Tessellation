@@ -42,19 +42,30 @@ ts.plot(sim_1)
 abline(v = new_xi, col = "blue", lty = 2)
 
 
+
 # Write a function that does the steps above
-move_xi <- function(xi, tmin){
+move_xi <- function(xi, tmin, p){
   # take the xi and make a copy
   new_xi = xi
   # randomly choose a xi index
   m = length(xi) - 1 
   rand_xi = sample(m-1 , 1) + 1
-  # move the randomly chosen xi to a new location conditional on tmin
-  new_xi[rand_xi] = sample(seq(xi[rand_xi - 1] + tmin , xi[rand_xi + 1] - tmin, 1), 1)
+  # p is the chosen threshold for doing sampling method 1 or sampling method 2
+  # generate a value that will turn on or off the sampling method
+  method <- rbinom(n = 1, size = 1, prob = p)
+  if(method == 1){
+    # move the randomly chosen xi to a new location conditional on tmin
+    new_xi[rand_xi] = sample(seq(xi[rand_xi - 1] + tmin , xi[rand_xi + 1] - tmin, 1), 1)
+  } else{
+    new_xi[rand_xi] = sample(seq(max(xi[rand_xi] - 1, xi[rand_xi - 1] + tmin),
+                                 min(xi[rand_xi] + 1, xi[rand_xi + 1] - tmin)), 1)
+  }
   return(new_xi)
 }
 
-cbind(xi, move_xi(xi, tmin = tmin))
+# p = 1 means we always choose method 1. 
+# AdaptSPEC suggests setting p = 0.2 
+cbind(xi, move_xi(xi, tmin = tmin, p = 0.2))
 
 
 
