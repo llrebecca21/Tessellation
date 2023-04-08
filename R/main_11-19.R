@@ -1,5 +1,4 @@
 rm(list = ls())
-setwd("~/Tessellation")
 
 # Load required libraries
 library(pracma)
@@ -21,7 +20,7 @@ source('R/time_interval.R')
 #source('R/MHstep_BFGS_11-19.R')
 source('R/effective_partition.R')
 # Error
-#Rcpp::sourceCpp('src/distance_partitionC_Lee.cpp')
+Rcpp::sourceCpp('src/distance_partitionC_Lee.cpp')
 # Error
 #Rcpp::sourceCpp('src/distance_partition.cpp')
 
