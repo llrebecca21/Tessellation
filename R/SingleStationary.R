@@ -27,7 +27,7 @@ alphabeta <- K + 1
 # prior intercept variance (variance associated with the alpha_0 prior)
 sigmasalpha <- 100
 # maximum value for tau^2 (Indicator in paper).
-maxtau <- 1000
+maxtausquared <- 1000
 # Define omega for the Basis Functions
 omega <- (0:(n-1)) / n
 
@@ -52,10 +52,31 @@ Theta <- matrix(NA, nrow = iter, ncol = K + 2)
 # unscale by n (i.e. 2/n)
 # fix fourier frequencies by multiplying by 2 (inside cosine function)
 X <- outer(X = omega, Y = 1:K, FUN = function(x,y){sqrt(2/n)*cos(2 * pi * y * x)})
-
-# X is orthonormal
+# Check X is orthonormal
 round(crossprod(X),5)
 
+# Initialize first row of Theta
+Theta[1,] <- c(alpha0, betavalues, tausquared)
+
+#####################
+# MCMC Algorithm
+#####################
+
+for (i in 2:iter) {
+  # Metropolis Hastings Step
+  
+  
+  # Tau Update: Gibbs Sampler: Inverse CDF sampler
+  # truncated gamma
+  # draw u first: corresponds to a valid Gamma CDF value
+  u <- runif(1, min = pgamma(q = 1/maxtausquared, shape = K/2 - 1, rate = 1/2 * crossprod(Theta[i,-c(1, K+2)])) , max = 1)
+  # Recovering corresponding inverse tau squared
+  invtausquarednew <- qgamma(p = u, shape = K/2 -1, rate = 1/2 * crossprod(Theta[i, -c(1,K+2)]))
+  # invert to get new tau squared value
+  newtau <- 1/invtausquarednew
+  # Update Theta matrix with new tau squared value
+  Theta[i,K+2] <- newtau
+}
 
 
 
