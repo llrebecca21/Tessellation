@@ -32,7 +32,7 @@ maxtausquared <- 1000
 omega <- (1:ceiling(n/2) - 1) / n
 
 # Set number of iterations
-iter <- 100
+iter <- 10000
   
 #######################
 # Initialize parameters
@@ -79,11 +79,11 @@ post_func <- function(b, a, t){
 
 for (i in 2:iter) {
   # Metropolis Hastings Step
-  betaprop <- rmvnorm(n = 1, mean = Theta[i - 1, -(K+2)], sigma = 0.1 * diag(K+1))
+  betaprop <- rmvnorm(n = 1, mean = Theta[i - 1, -(K+2)], sigma = 0.03 * diag(K+1))
   # calculate acceptance ratio
   prop_ratio <- min(1, post_func(b = betaprop[-1], a = betaprop[1], t = Theta[i - 1, K + 2]) / post_func(b = Theta[i-1, -c(1, K+2)], a = Theta[i-1, 1], t = Theta[i - 1, K + 2]) )
   # create acceptance decision
-  accept <- rbinom(1,1, prop_ratio)
+  accept <- rbinom(1, 1, prop_ratio)
   if(accept == 1){
     # accept betaprop as new alpha and beta
     Theta[i, -(K+2)] <- betaprop
@@ -102,7 +102,9 @@ for (i in 2:iter) {
   Theta[i,K+2] <- newtau
 }
 
+Theta <- Theta[-(1:500),]
 
-
-
+plot(Theta[,1], type = "l")
+plot(Theta[,2], type = "l")
+plot(Theta[,K+2], type = "l")
 
