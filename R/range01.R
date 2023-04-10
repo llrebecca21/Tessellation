@@ -1,5 +1,4 @@
-# Function that stores the range01 function
-#' Title
+#' range01 function
 #'
 #' @param x 
 #'
@@ -7,6 +6,6 @@
 #' @export
 #'
 #' @examples
-range01 <- function(x){
-  (x-min(x))/(max(x)-min(x))
+range01 <- function(x) {
+  (x - min(x)) / (max(x) - min(x))
 }
