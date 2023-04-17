@@ -1,17 +1,18 @@
 # Single Stationary Time Series
 library(mvtnorm)
-set.seed(1080)
+#set.seed(1080)
 source("R/whittle_post.R")
 source("R/gr_single.R")
 source("R/he_single.R")
 source("R/Chol_sampling.R")
+source("R/arma_spec.R")
 
 # Create single time series: AR(1)
 
 # set hyper-parameters
 
 # length of time series
-n <- 1000
+n <- 2000
 # burn-in period
 burn <- 50
 # Create coefficient phi
@@ -25,7 +26,7 @@ ts1 <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
 #################
 
 # number of basis functions/number of beta values
-K <- 10
+K <- 20
 # nbeta stores number of beta values (beta_{1:K}) + intercept term (alpha_0)
 alphabeta <- K + 1
 # prior intercept variance (variance associated with the alpha_0 prior)
@@ -44,17 +45,17 @@ nu = 1
 eta = 1
 
 # Set number of iterations
-iter <- 10000
+iter <- 2000
   
 #######################
 # Initialize parameters
 #######################
 # set tau^2 value
-tausquared <- 10
+tausquared <- 0.1
 # set intercept term
 alpha0 <- 0
 # set beta
-betavalues <- rep(0, K)
+betavalues <- rnorm(K,mean = 0, sd = sqrt(tausquared))
 
 # Create matrix to store samples
 # ncol: number of parameters (alpha0, Beta, tau^2)
@@ -63,7 +64,7 @@ Theta <- matrix(NA, nrow = iter, ncol = K + 2)
 # Create matrix of the basis functions
 # unscale by n (i.e. 2/n)
 # fix fourier frequencies by multiplying by 2 (inside cosine function)
-X <- outer(X = omega, Y = 1:K, FUN = function(x,y){sqrt(2/length(omega))*cos(4 * pi * y * x)})
+X <- outer(X = omega, Y = 1:K, FUN = function(x,y){sqrt(2/length(omega))*cos(pi * y * x)})
 # Check X is orthonormal basis
 round(crossprod(X),5)
 # Specify Sum of X for the posterior function later
@@ -113,16 +114,37 @@ for (g in 2:iter) {
     Theta[g, -(K+2)] <- c(a,b)
   }
   # Tau^squared Update: Gibbs Sampler: conditional conjugate prior for the half-t
-  
+  # 1/gamma is the same as invgamma (so we dont need the other library)
+  lambda = 1/rgamma(1, (nu+1)/2, nu/tsq + eta^2)
+  newtsq = 1/rgamma(1, (K + nu)/2, crossprod(Theta[g,-c(1,K+2)]) / 2 + nu/lambda)
   # Update Theta matrix with new tau squared value
-  Theta[g,K+2] <- newtau
+  Theta[g,K+2] <- newtsq
 }
 
-Theta <- Theta[-(1:500),]
+# Remove burn-in
+Theta <- Theta[-(1:burn),]
 
 plot(Theta[,1], type = "l")
+# betas
 plot(Theta[,2], type = "l")
+
+
+par(mfrow = c(2,5), mar = c(4.2, 4.2, 2, 0.2))
+for(m in 2:(K+1)){
+  plot(Theta[,m], type = "l")
+}
+
+# plot tau estimate
 plot(Theta[,K+2], type = "l")
+
+# Plot the Spectral Density Estimates
+specdens <- exp(cbind(1,X) %*% t(Theta[ ,-(K+2)]))
+par(mfrow = c(1, 1))
+plot(x =c(), y=c(), xlim = range(omega), ylim = range(specdens), ylab = "spectral density", xlab = "omega")
+for(h in 1:1000){
+  lines(x = omega, y = specdens[,h], col = rgb(0, 0, 0, 0.2))
+}
+lines(x = omega, y = arma_spec(omega = omega, phi = phi), col = "red", lwd = 2)
 
 
 # Metropolis Hastings Step
