@@ -1,14 +1,16 @@
 #' Title
 #'
-#' @param ab   : (K + 1 x 1) vector that stores alpha and beta values
-#' @param sumX : Squared Euclidean norm of the matrix X
-#' @param t    : vector that stores tau values
+#' @param ab  : (K+1) column vector of alpha and beta values
+#' @param sumX : row sums of the X matrix
+#' @param t   : scalar containing tau value
+#' @param perio : log of the periodogram
+#' @param sigmasalpha : prior intercept variance, variance associated with the alpha_0 prior
 #'
 #' @return
 #' @export
 #'
 #' @examples
-whittle_post <- function(ab, sumX, t){
+whittle_post <- function(ab, sumX, t, perio, sigmasalpha){
   # pull out alpha
   a = ab[1]
   # pull out beta
