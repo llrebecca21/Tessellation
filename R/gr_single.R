@@ -17,7 +17,7 @@ gr_single <- function(ab, X, sumX, tsq, perio, sigmasalpha){
   # pull out beta
   b = ab[-1]
   # Calculate the residual vector (equation inside the exp)
-  exp_res = exp(perio - X %*% b - a)
+  exp_res = c(exp(perio - X %*% b - a))
   # derivative of log of the whittle_post with respect to alpha
   derivalpha = -0.5 * (2 * a / sigmasalpha - length(sumX) - sum(exp_res))
   # derivative of log of the whittle_post with respect to beta (vector)
