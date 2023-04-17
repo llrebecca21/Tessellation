@@ -34,6 +34,14 @@ sigmasalpha <- 100
 maxtausquared <- 1000
 # Define omega for the Basis Functions
 omega <- (1:ceiling(n/2) - 1) / n
+# Define lambda for the half-t prior
+lambda = 1
+# Define degrees of freedom for half-t prior
+# Cauchy
+nu = 1 
+# Define eta as the other scale parameter for half-t prior
+# eta = 1 gives standard Cauchy; higher eta gives wider Cauchy
+eta = 1
 
 # Set number of iterations
 iter <- 10000
@@ -104,14 +112,8 @@ for (g in 2:iter) {
   }else{
     Theta[g, -(K+2)] <- c(a,b)
   }
-  # Tau Update: Gibbs Sampler: Inverse CDF sampler
-  # truncated gamma
-  # draw u first: corresponds to a valid Gamma CDF value
-  u <- runif(1, min = pgamma(q = 1/maxtausquared, shape = K/2 - 1, rate = 1/2 * crossprod(Theta[g,-c(1, K+2)])) , max = 1)
-  # Recovering corresponding inverse tau squared
-  invtausquarednew <- qgamma(p = u, shape = K/2 -1, rate = 1/2 * crossprod(Theta[g, -c(1,K+2)]))
-  # invert to get new tau squared value
-  newtau <- 1/invtausquarednew
+  # Tau^squared Update: Gibbs Sampler: conditional conjugate prior for the half-t
+  
   # Update Theta matrix with new tau squared value
   Theta[g,K+2] <- newtau
 }
