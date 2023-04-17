@@ -94,14 +94,15 @@ for (g in 2:iter) {
   
   #betaprop <- rmvnorm(n = 1, mean = Theta[g - 1, -(K+2)], sigma = 0.03 * diag(K+1))
   # calculate acceptance ratio
-  prop_ratio <- min(1, whittle_func(b = betaprop[-1], a = betaprop[1], t = Theta[i - 1, K + 2]) / post_func(b = Theta[g-1, -c(1, K+2)], a = Theta[g-1, 1], t = Theta[g - 1, K + 2]) )
+  prop_ratio <- min(1, exp(whittle_post(ab = betaprop, X = X, sumX = sumX, tsq = tsq, perio = perio, sigmasalpha = sigmasalpha) -
+                      whittle_post(ab = c(a,b), X = X, sumX = sumX, tsq = tsq, perio = perio, sigmasalpha = sigmasalpha)))
   # create acceptance decision
-  accept <- rbinom(1, 1, prop_ratio)
-  if(accept == 1){
+  accept <- runif(1)
+  if(accept < prop_ratio){
     # accept betaprop as new alpha and beta
     Theta[g, -(K+2)] <- betaprop
   }else{
-    Theta[g, -(K+2)] <- Theta[g - 1, -(K+2)]
+    Theta[g, -(K+2)] <- c(a,b)
   }
   # Tau Update: Gibbs Sampler: Inverse CDF sampler
   # truncated gamma
