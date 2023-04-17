@@ -3,6 +3,8 @@ library(mvtnorm)
 set.seed(1080)
 source("R/whittle_post.R")
 source("R/gr_single.R")
+source("R/he_single.R")
+source("R/Chol_sampling.R")
 
 # Create single time series: AR(1)
 
@@ -84,13 +86,15 @@ for (g in 2:iter) {
   # Metropolis Hastings Step
   # Maximum A Posteriori (MAP) estimate : finds the alpha and beta that gives us the mode of the conditional posterior
   map <- optim(par = c(a,b), fn = whittle_post, gr = gr_single, method ="BFGS", control = list(fnscale = -1),
-               X = X, sumX = sumX, tsq = tsq, perio = perio, sigmasalpha = sigmasalpha)
-  
-  # 
+               X = X, sumX = sumX, tsq = tsq, perio = perio, sigmasalpha = sigmasalpha)$par
+  # Call the hessian function
+  norm_cov <- he_single(ab = map, X = X, sumX = sumX, tsq = tsq, perio = perio, sigmasalpha = sigmasalpha)
+  # Calculate the alpha beta proposals, using Cholesky Sampling
+  betaprop <- Chol_sampling(Lt = chol(norm_cov), d = K + 1, beta_c = map)
   
   #betaprop <- rmvnorm(n = 1, mean = Theta[g - 1, -(K+2)], sigma = 0.03 * diag(K+1))
   # calculate acceptance ratio
-  prop_ratio <- min(1, post_func(b = betaprop[-1], a = betaprop[1], t = Theta[i - 1, K + 2]) / post_func(b = Theta[g-1, -c(1, K+2)], a = Theta[g-1, 1], t = Theta[g - 1, K + 2]) )
+  prop_ratio <- min(1, whittle_func(b = betaprop[-1], a = betaprop[1], t = Theta[i - 1, K + 2]) / post_func(b = Theta[g-1, -c(1, K+2)], a = Theta[g-1, 1], t = Theta[g - 1, K + 2]) )
   # create acceptance decision
   accept <- rbinom(1, 1, prop_ratio)
   if(accept == 1){
