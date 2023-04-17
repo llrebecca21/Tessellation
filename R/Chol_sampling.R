@@ -2,7 +2,7 @@
 #'
 #' @param Lt : (nbeta x nbeta) : Upper triangular matrix from Cholesky decomposition
 #' @param d  : (numeric : nbeta) : Length of beta
-#' @param beta_c : (nbeta x 1) : Vector of current beta values
+#' @param beta_c : (nbeta x 1) : Vector of center beta values
 #'
 #' @return
 #' @export
