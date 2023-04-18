@@ -10,7 +10,7 @@ date: "2023-01-23"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Metropolis Hastings Derivation
+## Metropolis Hastings and Gibbs Derivation
 
 
 First, following the steps in AdaptSPEC, we rewrite the Whittle Likelihood as follows using the notation change that $y_n(\omega_j) = \log(I_n(\omega_j))$:
@@ -29,7 +29,7 @@ Then we use the equation given in the paper: $\log (f_j) = g(\omega_j) = \alpha_
 &= (2\pi)^{-n/2}\exp\left\{-\frac{1}{2}[\alpha_0 n + 1_n X\beta + \sum^{n-1}_{j=0}\exp\{y_j-\alpha_0 - X^T_j \beta\}]\right\} \\
 \end{align*}
 
-### Priors
+### Priors 
 
 Following closely* the priors outlined in AdaptSPEC, we give the parameters the following priors:
 \begin{align*}
@@ -43,7 +43,51 @@ Such that $D_K$ is a positive definite diagonal matrix of dimension $K$.
 
  *Instead of giving $\tau^2$ a Uniform prior as in AdaptSPEC we have given it a half-t prior. Following the work laid out in Wand et.al. we are able to write the half-t prior as an Inverse-Gamma PDF with the parameters as written above.
 
+### Posterior Distribution
 
+Now, we go through the derivation of calculating the full posterior distribution of the Whittle Likelihood:
+\begin{align*}
+\pi(\beta, \tau^2, \alpha_0, \lambda | y) \propto \mathcal{L}(\beta, \tau^2, \alpha_0, \lambda | y) \cdot \pi(\beta) \cdot \pi(\tau^2 | \lambda) \cdot \pi(\lambda) \cdot \pi(\alpha_0)
+\end{align*}
 
+In order to be precise and organized we will first take each prior given and rewrite the prior as it will be used in the posterior distribution.
+
+First, $\pi(\alpha_0) \sim N(0, \sigma^2_\alpha)$:
+\begin{align*}
+\pi(\alpha_0) &= \frac{1}{\sqrt{2\pi \sigma^2}}\exp\left\{-\frac{\alpha_0^2}{2\sigma_\alpha^2}\right\} \\
+&\propto \exp\left\{-\frac{\alpha_0^2}{2\sigma^2_{\alpha}}\right\}
+\end{align*}
+
+Second, $\pi(\beta) \sim N(0, \tau^2D_k)$:
+\begin{align*}
+\pi(\beta) &= \frac{1}{\sqrt{(2\pi)^K |\tau^2 D_K|}}\exp\left\{-\frac{1}{2}\beta^T(\tau^2D_K)^{-1}\beta\right\}\\
+&\propto (\tau^2)^{-K/2} \cdot \exp\left\{-\frac{1}{2}\beta^T(\tau^2D_K)^{-1}\beta\right\}
+\end{align*}
+
+Third, $\pi(\tau^2 | \lambda) \sim IG\left(\frac{\nu_0}{2}, \frac{\nu_0}{\lambda}\right)$:
+\begin{align*}
+\pi(\tau^2 | \lambda) &= \frac{\left(\frac{\nu_0}{\lambda}\right)^{\nu_0/2}}{\Gamma\left(\frac{\nu_0}{2}\right)}\cdot\left(\frac{1}{\tau^2}\right)^{\frac{\nu_0}{2} + 1}\cdot \exp\left\{-\frac{\nu_0}{\tau^2\lambda}\right\}\\
+&\propto \frac{1}{\lambda^{\nu_0/2}}\left(\frac{1}{\tau^2}\right)^{\frac{\nu_0}{2} + 1}\cdot \exp\left\{-\frac{\nu_0}{\tau^2\lambda}\right\}
+\end{align*}
+
+Fourth, $\pi(\lambda) \sim IG\left(\frac{1}{2},\frac{1}{\eta_0^2}\right)$:
+\begin{align*}
+\pi(\lambda) &= \frac{\left(\frac{1}{\eta_0^2}\right)^{1/2}}{\Gamma(1/2)}\left(\frac{1}{\lambda}\right)^{3/2}\exp\left\{-\frac{1}{\lambda\eta_0^2}\right\} \\
+&\propto \left(\frac{1}{\lambda}\right)^{3/2} \exp\left\{-\frac{1}{\lambda\eta_0^2}\right\}
+\end{align*}
+
+Now, putting this together we have:
+\begin{align*}
+\pi(\beta, \tau^2, \alpha_0, \lambda | y)  &\propto (2\pi)^{-n/2}\exp\left\{-\frac{1}{2}[\alpha_0 n + 1_n X\beta + \sum^{n-1}_{j=0}\exp\{y_j-\alpha_0 - X^T_j \beta\}]\right\} \cdot \exp\left\{-\frac{\alpha_0^2}{2\sigma^2_{\alpha}}\right\} \\
+&\cdot (\tau^2)^{-K/2} \cdot \exp\left\{-\frac{1}{2}\beta^T(\tau^2D_K)^{-1}\beta\right\} \cdot \frac{1}{\lambda^{\nu_0/2}}\left(\frac{1}{\tau^2}\right)^{\frac{\nu_0}{2} + 1}\cdot \exp\left\{-\frac{\nu_0}{\tau^2\lambda}\right\} \cdot \left(\frac{1}{\lambda}\right)^{3/2} \exp\left\{-\frac{1}{\lambda\eta_0^2}\right\}
+\end{align*}
+
+## Conditional Posterior Distributions
+
+### Conditional Posterior Distribution of $\beta$ and $\alpha_0$
+
+\begin{align*}
+\pi(\beta,\alpha_0) \propto \exp\left\{-\frac{1}{2}\left[\alpha_0 n + \frac{\alpha_0^2}{\sigma^2_{\alpha}} + 1_{n}X\beta + \frac{1}{\tau^2}\beta^T(D_K)^{-1}\beta + \sum^{n-1}_{j=0} \exp\left\{y_j - \alpha_0 - X^T_j\beta\right\}\right]\right\}
+\end{align*}
 
 
