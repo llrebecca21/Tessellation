@@ -1,0 +1,49 @@
+---
+title: "Tessellation README"
+output:
+  pdf_document: default
+  html_document: default
+date: "2023-01-23"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Metropolis Hastings Derivation
+
+
+First, following the steps in AdaptSPEC, we rewrite the Whittle Likelihood as follows using the notation change that $y_n(\omega_j) = \log(I_n(\omega_j))$:
+
+\begin{align*}
+p(x|f) &= (2\pi)^{n/2} \prod_{j=0}^{n-1}\exp\{-\frac{1}{2} [\log f(\omega_j) + I_n(\omega_j)/f(\omega_j)]\}\\
+&= (2\pi)^{-n/2}\prod_{j=0}^{n-1}\exp\left\{-\frac{1}{2}\left[\log (f(\omega_j)) + \frac{\exp\{\log(I_n(\omega_j))\}}{\exp\{\log(f(\omega_j))\}}\right]\right\} \\
+\end{align*}
+
+Then we use the equation given in the paper: $\log (f_j) = g(\omega_j) = \alpha_0 + h(\omega_j) = \alpha_0 + X_j^T \beta$ in order to replace the unknown spectral density with $\alpha_0$'s and $\beta$'s
+
+\begin{align*}
+&= (2\pi)^{-n/2}\prod_{j=0}^{n-1}\exp\left\{-\frac{1}{2}\left[\log (f(\omega_j)) + \frac{\exp\{y_n(\omega_j)\}}{\exp\{\log(f(\omega_j))\}}\right]\right\} \\
+\mathcal{L}(\alpha_0,\beta,\tau^2 | y)&= (2\pi)^{-n/2}\prod_{j=0}^{n-1}\exp\left\{-\frac{1}{2}\left[ \alpha_0 + X_j^T \beta + \frac{\exp\{y_j\}}{\exp\{\alpha_0 + X_j^T \beta\}} \right]\right\}\\
+&= (2\pi)^{-n/2}\prod_{j=0}^{n-1} \exp\left\{-\frac{1}{2} \left[ \alpha_0 + X_j^T\beta + \exp\{y_j - \alpha_0 - X_j^T \beta\} \right]\right\} \\
+&= (2\pi)^{-n/2}\exp\left\{-\frac{1}{2}[\alpha_0 n + 1_n X\beta + \sum^{n-1}_{j=0}\exp\{y_j-\alpha_0 - X^T_j \beta\}]\right\} \\
+\end{align*}
+
+### Priors
+
+Following closely* the priors outlined in AdaptSPEC, we give the parameters the following priors:
+\begin{align*}
+\pi(\alpha) &\sim N(0,\sigma^2_\alpha) \\
+\pi(\beta) &\sim N(0,\tau^2,D_K) \\
+\pi(\tau^2 | \lambda) &\sim IG\left(\frac{\nu_0}{2}, \frac{\nu_0}{\lambda}\right) \\
+\pi(\lambda) &\sim IG\left(\frac{1}{2},\frac{1}{\eta_0^2}\right) \\
+\end{align*}
+
+Such that $D_K$ is a positive definite diagonal matrix of dimension $K$. 
+
+ *Instead of giving $\tau^2$ a Uniform prior as in AdaptSPEC we have given it a half-t prior. Following the work laid out in Wand et.al. we are able to write the half-t prior as an Inverse-Gamma PDF with the parameters as written above.
+
+
+
+
+
