@@ -87,7 +87,26 @@ Now, putting this together we have:
 ### Conditional Posterior Distribution of $\beta$ and $\alpha_0$
 
 \begin{align*}
-\pi(\beta,\alpha_0) \propto \exp\left\{-\frac{1}{2}\left[\alpha_0 n + \frac{\alpha_0^2}{\sigma^2_{\alpha}} + 1_{n}X\beta + \frac{1}{\tau^2}\beta^T(D_K)^{-1}\beta + \sum^{n-1}_{j=0} \exp\left\{y_j - \alpha_0 - X^T_j\beta\right\}\right]\right\}
+\pi(\beta,\alpha_0 | y) \propto \exp\left\{-\frac{1}{2}\left[\alpha_0 n + \frac{\alpha_0^2}{\sigma^2_{\alpha}} + 1_{n}X\beta + \frac{1}{\tau^2}\beta^T(D_K)^{-1}\beta + \sum^{n-1}_{j=0} \exp\left\{y_j - \alpha_0 - X^T_j\beta\right\}\right]\right\}
 \end{align*}
+
+### Conditional Posterior Distribution of $\tau^2$
+
+\begin{align*}
+\pi(\tau^2 | y) &\propto (\tau^2)^{-K/2} \cdot \exp\left\{-\frac{1}{2}\beta^T(\tau^2 D_K)^{-1}\beta\right\} \cdot \left(\frac{1}{\tau^2}\right)^{\frac{\nu_0}{2}+1} \cdot \exp\left\{-\frac{\nu_0}{\tau^2 \lambda}\right\}\\
+&\propto (\tau^2)^{-\frac{K - \nu_0}{2} - 1} \cdot \exp\left\{-\frac{1}{\tau^2}\left[\frac{1}{2}\beta^T(D_K)^{-1}\beta + \frac{\nu_0}{\lambda}\right]\right\}
+\end{align*}
+
+Hence, $\pi(\tau^2 | y) \sim IG\left( \frac{K + \nu_0}{2} \;,\; \frac{1}{2}\beta^T(D_K)^{-1}\beta + \frac{\nu_0}{\lambda}\right)$
+
+### Conditional Posterior Distribution of $\lambda$
+
+\begin{align*}
+\pi(\lambda | y) &\propto \frac{1}{\lambda^{\nu_0/2}} \cdot \exp\left\{-\frac{\nu_0}{\tau^2\lambda}\right\} \cdot \left(\frac{1}{\lambda}\right)^{3/2} \cdot \exp\left\{-\frac{1}{\lambda \eta_0^2}\right\} \\
+&\propto \frac{1}{\lambda^{\nu_0/2}\lambda^{3/2}}\cdot \exp\left\{-\frac{\nu_0}{\tau^2\lambda} - \frac{1}{\lambda \eta^2_0}\right\} \\
+&\propto \lambda^{-\left(\frac{\nu_0 + 1}{2}\right) - 1}\cdot \exp\left\{-\frac{1}{\lambda}\left[\frac{\nu_0}{\tau^2} + \frac{1}{\eta_0^2}\right]\right\}
+\end{align*}
+
+Hence, $\pi(\lambda | y) \sim IG\left(\frac{\nu_0 + 1}{2} \;,\; \frac{\nu_0}{\tau^2} + \frac{1}{\eta_0^2}\right)$
 
 
