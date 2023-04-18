@@ -155,4 +155,22 @@ lines(x = omega, y = arma_spec(omega = omega, phi = phi), col = "red", lwd = 2)
 # Tau Update
 # Change update to half-t distribution
 
+##### Notes: 
+
+# get the derivation for the f(\omega) ~ N( , \tau^2 D) (choice of D)
+# fix the issue with even and odd frequencies (Yakun's Code)
+# Whittle Posterior : Do not use the Identity, use the D
+# Whittle, Gradient and the Hessian, need the prior
+
+
+
+
+
+
+
+
+
+
+
+
 
