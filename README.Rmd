@@ -109,4 +109,81 @@ Hence, $\pi(\tau^2 | y) \sim IG\left( \frac{K + \nu_0}{2} \;,\; \frac{1}{2}\beta
 
 Hence, $\pi(\lambda | y) \sim IG\left(\frac{\nu_0 + 1}{2} \;,\; \frac{\nu_0}{\tau^2} + \frac{1}{\eta_0^2}\right)$
 
+## Gradient and Hessian of $\pi(\alpha_0, \beta | y)$
+
+### Gradient of $\pi(\alpha_0, \beta | y)$
+
+\begin{equation*}
+\bigtriangledown \log \pi(\alpha_0, \beta | y) = \bigtriangledown \log f(\cdot) =
+\begin{bmatrix} \frac{\partial}{\partial \alpha_0} \log f(\alpha_0, \beta)\\
+\bigtriangledown_\beta \log f(\alpha_0, \beta) \\
+\end{bmatrix}
+\end{equation*}
+
+\begin{align*}
+\frac{\partial}{\partial \alpha_0} \log f(\alpha_0, \beta) &= \frac{\partial}{\partial \alpha_0} \left[-\frac{1}{2} \left[ \alpha_0 n + \frac{\alpha_0^2}{\sigma^2_{\alpha_0}} + 1_n X\beta + \frac{1}{\tau^2} \beta^T (D_K)^{-1} \beta + \sum^{n-1}_{j=0} \exp\{y_j - \alpha_0 - X^T_j \beta\}\right] \right] \\
+&= -\frac{1}{2} \left[ n + \frac{2 \alpha_0}{\sigma^2_{\alpha_0}} + \sum_{j=0}^{n-1} - \exp\{y_j - \alpha_0 - X^T_j \beta\} \right] \\
+&= - \frac{n}{2} - \frac{\alpha_0}{\sigma^2_{\alpha}} + \frac{1}{2} \sum_{j=0}^{n-1} \exp\{y_j - \alpha_0 - X_j^T\beta\} \\
+\end{align*}
+
+\begin{align*}
+\bigtriangledown_\beta \log f(\alpha_0, \beta) &= \frac{\partial}{\partial \beta} \left[ - \frac{1}{2} \left[ 1_n X \beta + \frac{1}{\tau^2} \beta^T (D_K)^{-1} \beta + \sum_{j=0}^{n-1} \exp\{y_j - \alpha_0 - X^T_j \beta\}\right]\right] \\
+&= \frac{\partial}{\partial \beta} \left[-\frac{1}{2} 1_n X \beta \right] + \frac{\partial}{\partial \beta} \left[ -\frac{1}{2\tau^2} \beta^T (D_K)^{-1} \beta \right] + \frac{\partial}{\partial \beta} \left[ -\frac{1}{2} \sum^{n-1}_{j=0} \exp\{y_j - \alpha_0 - X^T_j \beta\}\right]\\
+&= -\frac{1}{2} \left[ X^T 1_n^T + 2D^{-1}_K \beta + \sum^{n-1}_{j=0} -X_j \exp\{y_j - \alpha_0 - X_j^T\beta\}\right]
+\end{align*}
+
+Therefore, the gradient of the conditional posterior of $\beta$ and $\alpha_0$ conditioned on $y$ is :
+
+\begin{equation*}
+\bigtriangledown \log \pi(\alpha_0, \beta | y) = \bigtriangledown \log f(\cdot) =
+\begin{bmatrix} - \frac{n}{2} - \frac{\alpha_0}{\sigma^2_{\alpha}} + \frac{1}{2} \sum_{j=0}^{n-1} \exp\{y_j - \alpha_0 - X_j^T\beta\} \\
+-\frac{1}{2} \left[ X^T 1_n^T + 2D^{-1}_K \beta + \sum^{n-1}_{j=0} -X_j \exp\{y_j - \alpha_0 - X_j^T\beta\}\right] \\
+\end{bmatrix}
+\end{equation*}
+
+### Hessian of $\pi(\beta, \alpha_0 | y)$
+
+\begin{equation*}
+\bigtriangledown^2 \log f(\cdot) =
+\begin{bmatrix}
+\frac{\partial^2}{\partial \alpha_0^2} & \left(\frac{\partial^2}{\partial \alpha_0 \partial \beta}\right)^T \\
+\frac{\partial^2}{\partial \beta \partial \alpha_0} & \bigtriangledown^2_{\beta} f\\
+\end{bmatrix}
+\end{equation*}
+
+\begin{align*}
+\frac{\partial^2\log f}{\partial \alpha_0^2} &= \frac{\partial}{\partial \alpha_0} \left[ -\frac{n}{2} - \frac{\alpha_0}{\sigma^2_{\alpha}} + \frac{1}{2} \sum^{n-1}_{j=0} \exp \left\{ y_j - \alpha_0 - X_j^T \beta \right\}\right]\\
+&= - \frac{1}{\sigma^2_{\alpha}} + \frac{1}{2} \sum^{n-1}_{j=0} - \exp\{y_j - \alpha_0 - X^T_j \beta\}\\
+&= -\frac{1}{\sigma^2_{\alpha}} - \frac{1}{2}\sum^{n-1}_{j=0} \exp\{y_j - \alpha_0 - X^T_j\beta\}
+\end{align*}
+
+\begin{align*}
+\frac{\partial^2 \log f}{\partial \beta \partial \alpha_0} &= \frac{\partial}{\partial \alpha} \left[ -\frac{1}{2} X^T 1_n^T - \frac{D^{-1}_K}{\tau^2}\beta + \frac{1}{2} \sum^{n-1}_{j=0} \exp\{y_j - \alpha_0 - X^T_j \beta\} \right] \\
+&= -\frac{1}{2} \sum^{n-1}_{j=0} X_j \exp\{y_j - \alpha_0 - X^T_j \beta\}
+\end{align*}
+
+\begin{align*}
+\frac{\partial^2 \log f}{\partial \alpha_0 \partial \beta} &= \frac{\partial}{\partial \beta} \left[ - \frac{n}{2} - \frac{\alpha_0}{\sigma^2_{\alpha_0}} + \frac{1}{2} \sum^{n-1}_{j=0} \exp\{y_j - \alpha_0 - X^T_j \beta\}\right] \\
+&= -\frac{1}{2} \sum^{n-1}_{j=0} X_j \exp\{y_j - \alpha_0 - X^T_j \beta\}
+\end{align*}
+
+\begin{align*}
+\frac{\partial^2 \log f}{\partial^2 \beta} &= \frac{\partial}{\partial \beta} \left[ -\frac{1}{2} \left[ X^T 1_n^T + \frac{2}{\tau^2}D^{-1}_K \beta + \sum^{n-1}_{j=0} - X_j \exp\{y_j - \alpha_0 - X_j^T \beta \} \right] \right] \\
+&= -\frac{D^{-1}_K}{\tau^2} + -\frac{1}{2} \sum^{n-1}_{j=0} X_j X^T_j \exp\{y_j - \alpha_0 - X^T_j \beta\}
+\end{align*}
+ 
+Therefore, the Hessian is:
+
+\begin{equation*}
+\bigtriangledown^2 \log f(\cdot) =
+\begin{bmatrix}
+-\frac{1}{\sigma^2_{\alpha}} - \frac{1}{2}\sum^{n-1}_{j=0} \exp\{y_j - \alpha_0 - X^T_j\beta\} & 
+\left( -\frac{1}{2} \sum^{n-1}_{j=0} X_j \exp\{y_j - \alpha_0 - X^T_j \beta\} \right)^T \\
+-\frac{1}{2} \sum^{n-1}_{j=0} X_j \exp\{y_j - \alpha_0 - X^T_j \beta\} &
+-\frac{D^{-1}_K}{\tau^2} + -\frac{1}{2} \sum^{n-1}_{j=0} X_j X^T_j \exp\{y_j - \alpha_0 - X^T_j \beta\} \\
+\end{bmatrix}
+\end{equation*}
+ 
+
+
 
