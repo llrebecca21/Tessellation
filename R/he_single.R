@@ -6,12 +6,13 @@
 #' @param tsq  : tau squared scalar
 #' @param perio : log of the periodogram
 #' @param sigmasalpha : prior intercept variance, variance associated with the alpha_0 prior
+#' @param D : vector of length K with strictly positive entries
 #'
 #' @return the negative of the hessian
 #' @export
 #'
 #' @examples
-he_single <- function(ab, X, sumX, tsq, perio, sigmasalpha){
+he_single <- function(ab, X, sumX, tsq, perio, sigmasalpha, D){
   # pull out alpha
   a = ab[1]
   # pull out beta
@@ -26,7 +27,7 @@ he_single <- function(ab, X, sumX, tsq, perio, sigmasalpha){
   # he_bb : stands for second partial derivative both with respect to beta (vector)
   he_bb = 0.5 * crossprod(X, Diag_res_X)
   # update the diagonal values of he_bb only
-  diag(he_bb) = diag(he_bb) + 1 / tsq
+  diag(he_bb) = diag(he_bb) + 1 / (tsq * D)
   he_matrix = matrix(NA, nrow = length(ab), ncol = length(ab))
   he_matrix[1,1] <- he_aa
   he_matrix[1,-1] <- t(he_ab)
