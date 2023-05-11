@@ -1,6 +1,6 @@
 # Single Stationary Time Series
 library(mvtnorm)
-#set.seed(1080)
+set.seed(1080)
 source("R/whittle_post.R")
 source("R/gr_single.R")
 source("R/he_single.R")
@@ -10,9 +10,8 @@ source("R/arma_spec.R")
 # Create single time series: AR(1)
 
 # set hyper-parameters
-
 # length of time series
-n <-  1999
+n <-  2000
 # burn-in period
 burn <- 50
 # Create coefficient phi
@@ -43,9 +42,14 @@ nu = 1
 # Define eta as the other scale parameter for half-t prior
 # eta = 1 gives standard Cauchy; higher eta gives wider Cauchy
 eta = 1
-
+# Define D's main diagonal
+# Identity D:
+# D = rep(1, K)
+# Slow Decaying D
+D = exp(0.12 * -(0:(K-1)))
+plot(D)
 # Set number of iterations
-iter <- 2000
+iter <- 10000
   
 #######################
 # Initialize parameters
@@ -84,9 +88,6 @@ Theta[1,] <- c(alpha0, betavalues, tausquared)
 
 perio <- log((abs(fft(ts1)) ^ 2 / n))
 
-
-
-
 plot(omega, perio, type = "l")
 length((abs(fft(ts1)) ^ 2 / n))
 
@@ -102,16 +103,16 @@ for (g in 2:iter) {
   # Metropolis Hastings Step
   # Maximum A Posteriori (MAP) estimate : finds the alpha and beta that gives us the mode of the conditional posterior of beta and alpha_0 conditioned on y
   map <- optim(par = c(a,b), fn = whittle_post, gr = gr_single, method ="BFGS", control = list(fnscale = -1),
-               X = X, sumX = sumX, tsq = tsq, perio = perio, sigmasalpha = sigmasalpha)$par
+               X = X, sumX = sumX, tsq = tsq, perio = perio, sigmasalpha = sigmasalpha, D = D)$par
   # Call the hessian function
-  norm_precision <- he_single(ab = map, X = X, sumX = sumX, tsq = tsq, perio = perio, sigmasalpha = sigmasalpha)
+  norm_precision <- he_single(ab = map, X = X, sumX = sumX, tsq = tsq, perio = perio, sigmasalpha = sigmasalpha, D = D)
   # Calculate the alpha beta proposals, using Cholesky Sampling
   betaprop <- Chol_sampling(Lt = chol(norm_precision), d = K + 1, beta_c = map)
   
   #betaprop <- rmvnorm(n = 1, mean = Theta[g - 1, -(K+2)], sigma = 0.03 * diag(K+1))
   # calculate acceptance ratio
-  prop_ratio <- min(1, exp(whittle_post(ab = betaprop, X = X, sumX = sumX, tsq = tsq, perio = perio, sigmasalpha = sigmasalpha) -
-                      whittle_post(ab = c(a,b), X = X, sumX = sumX, tsq = tsq, perio = perio, sigmasalpha = sigmasalpha)))
+  prop_ratio <- min(1, exp(whittle_post(ab = betaprop, X = X, sumX = sumX, tsq = tsq, perio = perio, sigmasalpha = sigmasalpha, D = D) -
+                      whittle_post(ab = c(a,b), X = X, sumX = sumX, tsq = tsq, perio = perio, sigmasalpha = sigmasalpha, D = D)))
   # create acceptance decision
   accept <- runif(1)
   if(accept < prop_ratio){
@@ -148,10 +149,12 @@ plot(Theta[,K+2], type = "l")
 specdens <- exp(cbind(1,X) %*% t(Theta[ ,-(K+2)]))
 par(mfrow = c(1, 1))
 plot(x =c(), y=c(), xlim = range(omega), ylim = range(specdens), ylab = "spectral density", xlab = "omega")
-for(h in 1:1000){
+for(h in sample(ncol(specdens), 1000, replace = FALSE)){
   lines(x = omega, y = specdens[,h], col = rgb(0, 0, 0, 0.2))
 }
-#lines(x = omega, y = arma_spec(omega = omega, phi = phi), col = "red", lwd = 2)
+lines(x = omega, y = arma_spec(omega = omega, phi = phi), col = "red", lwd = 2)
+
+
 
 
 # Metropolis Hastings Step
@@ -165,7 +168,6 @@ for(h in 1:1000){
 ##### Notes: 
 
 # get the derivation for the f(\omega) ~ N( , \tau^2 D) (choice of D)
-# fix the issue with even and odd frequencies (Yakun's Code)
 # Whittle Posterior : Do not use the Identity, use the D
 # Whittle, Gradient and the Hessian, need the prior
 
