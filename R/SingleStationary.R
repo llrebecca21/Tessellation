@@ -25,7 +25,7 @@ ts1 <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
 #################
 
 # number of basis functions/number of beta values
-K <- 20
+K <- 10
 # nbeta stores number of beta values (beta_{1:K}) + intercept term (alpha_0)
 alphabeta <- K + 1
 # prior intercept variance (variance associated with the alpha_0 prior)
@@ -154,8 +154,24 @@ for(h in sample(ncol(specdens), 1000, replace = FALSE)){
 }
 lines(x = omega, y = arma_spec(omega = omega, phi = phi), col = "red", lwd = 2)
 
+dim(specdens)
+# n X (numiter - burn)
+
+# Create Data frame to store the lower bound and upper bound and mean
+summary_stats <- data.frame("lower" = apply(specdens, 1, FUN = function(x){quantile(x, .025)}), "mean" = rowMeans(specdens),
+                            "upper" = apply(specdens, 1, FUN = function(x){quantile(x, 0.975)}))
 
 
+# Plot with the bounds: 
+par(mfrow = c(1, 1))
+plot(x =c(), y=c(), xlim = range(omega), ylim = range(specdens), ylab = "Spectral Density", xlab = "omega",
+     main = "Posterior Mean and\n 95% Confidence Interval")
+polygon(x = c(omega,rev(omega)), y = c(summary_stats$lower, rev(summary_stats$upper)), col = "darkgrey", border = NA)
+#lines(x = omega, y = summary_stats$lower, lty = 2, col = "darkgrey")
+lines(x = omega, y = summary_stats$mean, col = "black")
+#lines(x = omega, y = summary_stats$upper, lty = 2, col = "darkgrey")
+lines(x = omega, y = arma_spec(omega = omega, phi = phi), col = "red", lwd = 2)
+legend("topright", col = c("black", "red"), lwd = c(1,2), legend = c("Posterior Mean", "True Spectral Density"))
 
 # Metropolis Hastings Step
 # Bring in the Gaussian Approximation with BFGS Optimization
