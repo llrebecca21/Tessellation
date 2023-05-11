@@ -12,7 +12,7 @@ source("R/arma_spec.R")
 # set hyper-parameters
 
 # length of time series
-n <- 2000
+n <-  1999
 # burn-in period
 burn <- 50
 # Create coefficient phi
@@ -34,7 +34,7 @@ sigmasalpha <- 100
 # maximum value for tau^2 (Indicator in paper).
 maxtausquared <- 1000
 # Define omega for the Basis Functions
-omega <- (1:ceiling(n/2) - 1) / n
+omega <- (2 * pi * (0:(n-1)))/n
 # Define lambda for the half-t prior
 lambda = 1
 # Define degrees of freedom for half-t prior
@@ -64,8 +64,11 @@ Theta <- matrix(NA, nrow = iter, ncol = K + 2)
 # Create matrix of the basis functions
 # unscale by n (i.e. 2/n)
 # fix fourier frequencies by multiplying by 2 (inside cosine function)
-X <- outer(X = omega, Y = 1:K, FUN = function(x,y){sqrt(2/length(omega))*cos(pi * y * x)})
+X <- outer(X = omega, Y = 1:K, FUN = function(x,y){cos(y * x) / sqrt(n / 2)})
 # Check X is orthonormal basis
+dim(X)
+# 2000 rows : n
+# 20: K
 round(crossprod(X),5)
 # Specify Sum of X for the posterior function later
 # 1^T_n X Beta part in the paper (excluding the Beta)
@@ -78,9 +81,13 @@ Theta[1,] <- c(alpha0, betavalues, tausquared)
 # MCMC Algorithm
 #####################
 # Define y_n(\omega_j) for the posterior function below
-perio <- log((abs(fft(ts1)) ^ 2 / n)[1:ceiling(n/2)])
 
-plot(perio, type = "l")
+perio <- log((abs(fft(ts1)) ^ 2 / n))
+
+
+
+
+plot(omega, perio, type = "l")
 length((abs(fft(ts1)) ^ 2 / n))
 
 for (g in 2:iter) {
@@ -93,13 +100,13 @@ for (g in 2:iter) {
   # tau^squared:
   tsq = Theta[g - 1, K + 2]
   # Metropolis Hastings Step
-  # Maximum A Posteriori (MAP) estimate : finds the alpha and beta that gives us the mode of the conditional posterior
+  # Maximum A Posteriori (MAP) estimate : finds the alpha and beta that gives us the mode of the conditional posterior of beta and alpha_0 conditioned on y
   map <- optim(par = c(a,b), fn = whittle_post, gr = gr_single, method ="BFGS", control = list(fnscale = -1),
                X = X, sumX = sumX, tsq = tsq, perio = perio, sigmasalpha = sigmasalpha)$par
   # Call the hessian function
-  norm_cov <- he_single(ab = map, X = X, sumX = sumX, tsq = tsq, perio = perio, sigmasalpha = sigmasalpha)
+  norm_precision <- he_single(ab = map, X = X, sumX = sumX, tsq = tsq, perio = perio, sigmasalpha = sigmasalpha)
   # Calculate the alpha beta proposals, using Cholesky Sampling
-  betaprop <- Chol_sampling(Lt = chol(norm_cov), d = K + 1, beta_c = map)
+  betaprop <- Chol_sampling(Lt = chol(norm_precision), d = K + 1, beta_c = map)
   
   #betaprop <- rmvnorm(n = 1, mean = Theta[g - 1, -(K+2)], sigma = 0.03 * diag(K+1))
   # calculate acceptance ratio
@@ -144,7 +151,7 @@ plot(x =c(), y=c(), xlim = range(omega), ylim = range(specdens), ylab = "spectra
 for(h in 1:1000){
   lines(x = omega, y = specdens[,h], col = rgb(0, 0, 0, 0.2))
 }
-lines(x = omega, y = arma_spec(omega = omega, phi = phi), col = "red", lwd = 2)
+#lines(x = omega, y = arma_spec(omega = omega, phi = phi), col = "red", lwd = 2)
 
 
 # Metropolis Hastings Step
