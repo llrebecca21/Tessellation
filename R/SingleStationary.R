@@ -18,8 +18,10 @@ burn <- 50
 phi <- 0.5
 
 # Model 1 : AR(1) with phi = 0.5
+# Rprof()
 ts1 <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
-
+# Rprof(NULL)
+# summaryRprof()
 #################
 # MCMC parameters
 #################
@@ -91,6 +93,7 @@ perio <- log((abs(fft(ts1)) ^ 2 / n))
 plot(omega, perio, type = "l")
 length((abs(fft(ts1)) ^ 2 / n))
 
+Rprof()
 for (g in 2:iter) {
   # g = 2
   # Extract alpha, beta and tau^2 from theta
@@ -128,6 +131,8 @@ for (g in 2:iter) {
   # Update Theta matrix with new tau squared value
   Theta[g,K+2] <- newtsq
 }
+Rprof(NULL)
+summaryRprof()
 
 # Remove burn-in
 Theta <- Theta[-(1:burn),]
@@ -146,13 +151,19 @@ for(m in 2:(K+1)){
 plot(Theta[,K+2], type = "l")
 
 # Plot the Spectral Density Estimates
+pdf(file = "Spectral_Density_Estimates.pdf",
+    width = 10,
+    height = 5,)
 specdens <- exp(cbind(1,X) %*% t(Theta[ ,-(K+2)]))
 par(mfrow = c(1, 1))
-plot(x =c(), y=c(), xlim = range(omega), ylim = range(specdens), ylab = "spectral density", xlab = "omega")
+plot(x =c(), y=c(), xlim = range(omega), ylim = range(specdens), ylab = "Spectral Density", xlab = "omega",
+     main = "Spectral Density Estimates \nwith True Spectral Density")
 for(h in sample(ncol(specdens), 1000, replace = FALSE)){
   lines(x = omega, y = specdens[,h], col = rgb(0, 0, 0, 0.2))
 }
 lines(x = omega, y = arma_spec(omega = omega, phi = phi), col = "red", lwd = 2)
+legend("topright", col = c("black", "red"), lwd = c(1,2), legend = c("Estimate", "True"))
+dev.off()
 
 dim(specdens)
 # n X (numiter - burn)
@@ -162,7 +173,10 @@ summary_stats <- data.frame("lower" = apply(specdens, 1, FUN = function(x){quant
                             "upper" = apply(specdens, 1, FUN = function(x){quantile(x, 0.975)}))
 
 
-# Plot with the bounds: 
+# Plot with the bounds:
+pdf(file = "Posterior_Mean.pdf",
+    width = 10,
+    height = 5,)
 par(mfrow = c(1, 1))
 plot(x =c(), y=c(), xlim = range(omega), ylim = range(specdens), ylab = "Spectral Density", xlab = "omega",
      main = "Posterior Mean and\n 95% Confidence Interval")
@@ -172,6 +186,7 @@ lines(x = omega, y = summary_stats$mean, col = "black")
 #lines(x = omega, y = summary_stats$upper, lty = 2, col = "darkgrey")
 lines(x = omega, y = arma_spec(omega = omega, phi = phi), col = "red", lwd = 2)
 legend("topright", col = c("black", "red"), lwd = c(1,2), legend = c("Posterior Mean", "True Spectral Density"))
+dev.off()
 
 # Metropolis Hastings Step
 # Bring in the Gaussian Approximation with BFGS Optimization
