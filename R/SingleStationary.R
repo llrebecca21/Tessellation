@@ -11,14 +11,17 @@ source("R/arma_spec.R")
 
 # set hyper-parameters
 # length of time series
-n <-  2000
+n <-  4000
 # burn-in period for ARsim
 burn <- 50
+
 # Create coefficient phi
 # For AR(1)
 # phi <- 0.5
+
 # AR(2)
 # phi <- c(1.4256, -0.9)
+
 # For AR(3)
 phi <- c(1.4256, -0.7344, 0.1296)
 
@@ -200,4 +203,12 @@ lines(x = omega, y = summary_stats$mean, col = "black")
 lines(x = omega, y = arma_spec(omega = omega, phi = phi), col = "red", lwd = 2)
 legend("topright", col = c("black", "red"), lwd = c(1,2), legend = c("Posterior Mean", "True Spectral Density"))
 #dev.off()
+
+mean((arma_spec(omega = omega, phi = phi) - summary_stats$mean)^2)
+# for n = 2000
+# 1.183
+
+# for n = 4000
+# 0.6510
+
 
