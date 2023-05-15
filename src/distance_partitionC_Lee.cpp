@@ -1,6 +1,11 @@
 #include <RcppArmadillo.h>
 // [[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
+using arma::mat;
+using arma::vec;
+using arma::uvec;
+using arma::fill::zeros;
+using namespace arma;
 
 // [[Rcpp::export]]
 arma::vec distance_partitionC_Lee(arma::mat X, arma::vec centers, arma::vec weights)
