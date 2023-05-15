@@ -12,22 +12,34 @@ source("R/arma_spec.R")
 # set hyper-parameters
 # length of time series
 n <-  2000
-# burn-in period
+# burn-in period for ARsim
 burn <- 50
 # Create coefficient phi
-phi <- 0.5
+# For AR(1)
+# phi <- 0.5
+# AR(2)
+# phi <- c(1.4256, -0.9)
+# For AR(3)
+phi <- c(1.4256, -0.7344, 0.1296)
+
 
 # Model 1 : AR(1) with phi = 0.5
 # Rprof()
-ts1 <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
+#ts1 <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
 # Rprof(NULL)
 # summaryRprof()
+
+# Model 2 : AR(3)
+# given by x_t = 1.4256 x_(t-1) - 0.7344 x_(t-2) + 0.1296 x_(t-3) + \epsilon_t
+ts1 <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
+
+
 #################
 # MCMC parameters
 #################
 
 # number of basis functions/number of beta values
-K <- 10
+K <- 15
 # nbeta stores number of beta values (beta_{1:K}) + intercept term (alpha_0)
 alphabeta <- K + 1
 # prior intercept variance (variance associated with the alpha_0 prior)
@@ -135,7 +147,8 @@ Rprof(NULL)
 summaryRprof()
 
 # Remove burn-in
-Theta <- Theta[-(1:burn),]
+burnin <- 250
+Theta <- Theta[-(1:burnin),]
 
 plot(Theta[,1], type = "l")
 # betas
@@ -151,9 +164,9 @@ for(m in 2:(K+1)){
 plot(Theta[,K+2], type = "l")
 
 # Plot the Spectral Density Estimates
-pdf(file = "Spectral_Density_Estimates.pdf",
-    width = 10,
-    height = 5,)
+#pdf(file = "Spectral_Density_Estimates.pdf",
+#    width = 10,
+#    height = 5,)
 specdens <- exp(cbind(1,X) %*% t(Theta[ ,-(K+2)]))
 par(mfrow = c(1, 1))
 plot(x =c(), y=c(), xlim = range(omega), ylim = range(specdens), ylab = "Spectral Density", xlab = "omega",
@@ -163,7 +176,7 @@ for(h in sample(ncol(specdens), 1000, replace = FALSE)){
 }
 lines(x = omega, y = arma_spec(omega = omega, phi = phi), col = "red", lwd = 2)
 legend("topright", col = c("black", "red"), lwd = c(1,2), legend = c("Estimate", "True"))
-dev.off()
+#dev.off()
 
 dim(specdens)
 # n X (numiter - burn)
@@ -174,9 +187,9 @@ summary_stats <- data.frame("lower" = apply(specdens, 1, FUN = function(x){quant
 
 
 # Plot with the bounds:
-pdf(file = "Posterior_Mean.pdf",
-    width = 10,
-    height = 5,)
+#pdf(file = "Posterior_Mean.pdf",
+#    width = 10,
+#    height = 5,)
 par(mfrow = c(1, 1))
 plot(x =c(), y=c(), xlim = range(omega), ylim = range(specdens), ylab = "Spectral Density", xlab = "omega",
      main = "Posterior Mean and\n 95% Confidence Interval")
@@ -186,31 +199,5 @@ lines(x = omega, y = summary_stats$mean, col = "black")
 #lines(x = omega, y = summary_stats$upper, lty = 2, col = "darkgrey")
 lines(x = omega, y = arma_spec(omega = omega, phi = phi), col = "red", lwd = 2)
 legend("topright", col = c("black", "red"), lwd = c(1,2), legend = c("Posterior Mean", "True Spectral Density"))
-dev.off()
-
-# Metropolis Hastings Step
-# Bring in the Gaussian Approximation with BFGS Optimization
-# use log to write the acceptance step
-# change index i to g
-
-# Tau Update
-# Change update to half-t distribution
-
-##### Notes: 
-
-# get the derivation for the f(\omega) ~ N( , \tau^2 D) (choice of D)
-# Whittle Posterior : Do not use the Identity, use the D
-# Whittle, Gradient and the Hessian, need the prior
-
-
-
-
-
-
-
-
-
-
-
-
+#dev.off()
 
