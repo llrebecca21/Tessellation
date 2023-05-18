@@ -34,7 +34,21 @@ phi <- c(1.4256, -0.7344, 0.1296)
 
 # Model 2 : AR(3)
 # given by x_t = 1.4256 x_(t-1) - 0.7344 x_(t-2) + 0.1296 x_(t-3) + \epsilon_t
-ts1 <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
+
+# Need to Create ~ 10 copies of the time series and store it in a matrix
+num_timeseries <- 10
+# create matrix to store the time series
+matrix_timeseries <- matrix(NA, nrow = n, ncol = num_timeseries)
+for(r in 1:num_timeseries){
+  matrix_timeseries[,r] <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
+}
+
+# plot the first time series
+plot(matrix_timeseries[,1], type = "l")
+# plot the second time series
+plot(matrix_timeseries[,2], type = "l")
+
+# ts1 <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
 
 
 #################
