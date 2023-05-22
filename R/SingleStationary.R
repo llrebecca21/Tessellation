@@ -1,5 +1,6 @@
 # Single Stationary Time Series
 library(mvtnorm)
+library(progress)
 set.seed(1080)
 source("R/whittle_post.R")
 source("R/gr_single.R")
@@ -17,13 +18,13 @@ burn <- 50
 
 # Create coefficient phi
 # For AR(1)
-# phi <- 0.5
+phi <- 0.5
 
 # AR(2)
 # phi <- c(1.4256, -0.9)
 
 # For AR(3)
-phi <- c(1.4256, -0.7344, 0.1296)
+# phi <- c(1.4256, -0.7344, 0.1296)
 
 
 # Model 1 : AR(1) with phi = 0.5
@@ -106,8 +107,10 @@ perio <- log((abs(fft(ts1)) ^ 2 / n))
 plot(omega, perio, type = "l")
 length((abs(fft(ts1)) ^ 2 / n))
 
-Rprof()
+#Rprof()
+pb = progress_bar$new(total = iter - 1)
 for (g in 2:iter) {
+  pb$tick()
   # g = 2
   # Extract alpha, beta and tau^2 from theta
   # alpha:
@@ -144,25 +147,26 @@ for (g in 2:iter) {
   # Update Theta matrix with new tau squared value
   Theta[g,K+2] <- newtsq
 }
-Rprof(NULL)
+#Rprof(NULL)
 summaryRprof()
 
 # Remove burn-in
 burnin <- 250
 Theta <- Theta[-(1:burnin),]
 
-plot(Theta[,1], type = "l")
-# betas
-plot(Theta[,2], type = "l")
-
-
+# Beta Trace Plots
 par(mfrow = c(2,5), mar = c(4.2, 4.2, 2, 0.2))
 for(m in 2:(K+1)){
   plot(Theta[,m], type = "l")
 }
 
-# plot tau estimate
+# plot tau^2 estimate
+par(mfrow = c(1,1))
 plot(Theta[,K+2], type = "l")
+
+# plot alpha estimate
+par(mfrow = c(1,1))
+plot(Theta[,1], type = "l")
 
 # Plot the Spectral Density Estimates
 #pdf(file = "Spectral_Density_Estimates.pdf",
@@ -170,7 +174,7 @@ plot(Theta[,K+2], type = "l")
 #    height = 5,)
 specdens <- exp(cbind(1,X) %*% t(Theta[ ,-(K+2)]))
 par(mfrow = c(1, 1))
-plot(x =c(), y=c(), xlim = range(omega), ylim = range(log(specdens)), ylab = "Spectral Density", xlab = "omega",
+plot(x =c(), y=c(), xlim = c(0,3), ylim = range(log(specdens)), ylab = "Spectral Density", xlab = "omega",
      main = "Spectral Density Estimates \nwith True Spectral Density")
 for(h in sample(ncol(specdens), 1000, replace = FALSE)){
   lines(x = omega, y = log(specdens[,h]), col = rgb(0, 0, 0, 0.2))
@@ -192,8 +196,8 @@ summary_stats <- data.frame("lower" = apply(specdens, 1, FUN = function(x){quant
 #    width = 10,
 #    height = 5,)
 par(mfrow = c(1, 1))
-plot(x =c(), y=c(), xlim = range(omega), ylim = range(specdens), ylab = "Spectral Density", xlab = "omega",
-     main = "Posterior Mean and\n 95% Confidence Interval")
+plot(x =c(), y=c(), xlim = c(0,3), ylim = range(specdens), ylab = "Spectral Density", xlab = "omega",
+     main = "Posterior Mean and\n 95% Credible Interval")
 polygon(x = c(omega,rev(omega)), y = c(summary_stats$lower, rev(summary_stats$upper)), col = "darkgrey", border = NA)
 #lines(x = omega, y = summary_stats$lower, lty = 2, col = "darkgrey")
 lines(x = omega, y = summary_stats$mean, col = "black")
@@ -208,5 +212,16 @@ mean((arma_spec(omega = omega, phi = phi) - summary_stats$mean)^2)
 
 # for n = 4000
 # 0.6510
+
+##############
+# Trace Plots
+##############
+par(mfrow = c(1,1))
+plot()
+
+
+
+
+
 
 
