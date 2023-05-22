@@ -18,7 +18,7 @@ burn <- 50
 
 # Create coefficient phi
 # For AR(1)
-phi <- 0.5
+# phi <- 0.5
 
 # AR(2)
 # phi <- c(1.4256, -0.9)
@@ -42,7 +42,7 @@ ts1 <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
 #################
 
 # number of basis functions/number of beta values
-K <- 7
+K <- 10
 # nbeta stores number of beta values (beta_{1:K}) + intercept term (alpha_0)
 alphabeta <- K + 1
 # prior intercept variance (variance associated with the alpha_0 prior)
@@ -154,20 +154,6 @@ summaryRprof()
 burnin <- 250
 Theta <- Theta[-(1:burnin),]
 
-# Beta Trace Plots
-par(mfrow = c(2,5), mar = c(4.2, 4.2, 2, 0.2))
-for(m in 2:(K+1)){
-  plot(Theta[,m], type = "l")
-}
-
-# plot tau^2 estimate
-par(mfrow = c(1,1))
-plot(Theta[,K+2], type = "l")
-
-# plot alpha estimate
-par(mfrow = c(1,1))
-plot(Theta[,1], type = "l")
-
 # Plot the Spectral Density Estimates
 #pdf(file = "Spectral_Density_Estimates.pdf",
 #    width = 10,
@@ -216,9 +202,20 @@ mean((arma_spec(omega = omega, phi = phi) - summary_stats$mean)^2)
 ##############
 # Trace Plots
 ##############
-par(mfrow = c(1,1))
-plot()
 
+# Beta Trace Plots
+par(mfrow = c(2,5), mar = c(4.2, 4.2, 2, 0.2))
+for(m in 2:(K+1)){
+  plot(Theta[,m], type = "l")
+}
+
+# plot tau^2 estimate
+par(mfrow = c(1,1))
+plot(Theta[,K+2], type = "l")
+
+# plot alpha estimate
+par(mfrow = c(1,1))
+plot(Theta[,1], type = "l")
 
 
 
