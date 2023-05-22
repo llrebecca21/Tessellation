@@ -11,7 +11,7 @@ source("R/arma_spec.R")
 
 # set hyper-parameters
 # length of time series
-n <-  4000
+n <-  1000
 # burn-in period for ARsim
 burn <- 50
 
@@ -36,13 +36,12 @@ phi <- c(1.4256, -0.7344, 0.1296)
 # given by x_t = 1.4256 x_(t-1) - 0.7344 x_(t-2) + 0.1296 x_(t-3) + \epsilon_t
 ts1 <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
 
-
 #################
 # MCMC parameters
 #################
 
 # number of basis functions/number of beta values
-K <- 15
+K <- 7
 # nbeta stores number of beta values (beta_{1:K}) + intercept term (alpha_0)
 alphabeta <- K + 1
 # prior intercept variance (variance associated with the alpha_0 prior)
@@ -62,9 +61,8 @@ eta = 1
 # Define D's main diagonal
 # Identity D:
 # D = rep(1, K)
-# Slow Decaying D
-D = exp(0.12 * -(0:(K-1)))
-plot(D)
+D = c((sqrt(2)*pi*(1:K))^(-2))
+# D = exp(0.12 * -(0:(K-1)))
 # Set number of iterations
 iter <- 10000
   
@@ -72,7 +70,7 @@ iter <- 10000
 # Initialize parameters
 #######################
 # set tau^2 value
-tausquared <- 0.1
+tausquared <- 100
 # set intercept term
 alpha0 <- 0
 # set beta
@@ -142,7 +140,7 @@ for (g in 2:iter) {
   # Tau^squared Update: Gibbs Sampler: conditional conjugate prior for the half-t
   # 1/gamma is the same as invgamma (so we dont need the other library)
   lambda = 1/rgamma(1, (nu+1)/2, nu/tsq + eta^2)
-  newtsq = 1/rgamma(1, (K + nu)/2, crossprod(Theta[g,-c(1,K+2)]) / 2 + nu/lambda)
+  newtsq = 1/rgamma(1, (K + nu)/2, sum(Theta[g,-c(1,K+2)]^2 / D) / 2 + nu/lambda)
   # Update Theta matrix with new tau squared value
   Theta[g,K+2] <- newtsq
 }
@@ -172,12 +170,12 @@ plot(Theta[,K+2], type = "l")
 #    height = 5,)
 specdens <- exp(cbind(1,X) %*% t(Theta[ ,-(K+2)]))
 par(mfrow = c(1, 1))
-plot(x =c(), y=c(), xlim = range(omega), ylim = range(specdens), ylab = "Spectral Density", xlab = "omega",
+plot(x =c(), y=c(), xlim = range(omega), ylim = range(log(specdens)), ylab = "Spectral Density", xlab = "omega",
      main = "Spectral Density Estimates \nwith True Spectral Density")
 for(h in sample(ncol(specdens), 1000, replace = FALSE)){
-  lines(x = omega, y = specdens[,h], col = rgb(0, 0, 0, 0.2))
+  lines(x = omega, y = log(specdens[,h]), col = rgb(0, 0, 0, 0.2))
 }
-lines(x = omega, y = arma_spec(omega = omega, phi = phi), col = "red", lwd = 2)
+lines(x = omega, y = log(arma_spec(omega = omega, phi = phi)), col = "red", lwd = 2)
 legend("topright", col = c("black", "red"), lwd = c(1,2), legend = c("Estimate", "True"))
 #dev.off()
 
