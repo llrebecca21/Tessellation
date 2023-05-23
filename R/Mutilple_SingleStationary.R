@@ -1,6 +1,7 @@
-# Single Stationary Time Series
+# Multiple Single Stationary Time Series from the same underlying spectra
 library(mvtnorm)
-set.seed(1080)
+library(progress)
+set.seed(100)
 source("R/whittle_post.R")
 source("R/gr_single.R")
 source("R/he_single.R")
@@ -11,19 +12,19 @@ source("R/arma_spec.R")
 
 # set hyper-parameters
 # length of time series
-n <-  500
+n <-  1000
 # burn-in period for ARsim
 burn <- 50
 
 # Create coefficient phi
 # For AR(1)
-# phi <- 0.5
+phi <- 0.5
 
 # AR(2)
 # phi <- c(1.4256, -0.9)
 
 # For AR(3)
-phi <- c(1.4256, -0.7344, 0.1296)
+# phi <- c(1.4256, -0.7344, 0.1296)
 
 
 # Model 1 : AR(1) with phi = 0.5
@@ -31,9 +32,6 @@ phi <- c(1.4256, -0.7344, 0.1296)
 #ts1 <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
 # Rprof(NULL)
 # summaryRprof()
-
-# Model 2 : AR(3)
-# given by x_t = 1.4256 x_(t-1) - 0.7344 x_(t-2) + 0.1296 x_(t-3) + \epsilon_t
 
 # Need to Create ~ 10 copies of the time series and store it in a matrix
 num_timeseries <- 10
@@ -43,13 +41,9 @@ for(r in 1:num_timeseries){
   matrix_timeseries[,r] <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
 }
 
-# plot the first time series
-plot(matrix_timeseries[,1], type = "l")
-# plot the second time series
-plot(matrix_timeseries[,2], type = "l")
-
-# ts1 <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
-
+# Model 2 : AR(3)
+# given by x_t = 1.4256 x_(t-1) - 0.7344 x_(t-2) + 0.1296 x_(t-3) + \epsilon_t
+ts1 <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
 
 #################
 # MCMC parameters
@@ -61,24 +55,24 @@ K <- 10
 alphabeta <- K + 1
 # prior intercept variance (variance associated with the alpha_0 prior)
 sigmasalpha <- 100
-# maximum value for tau^2 (Indicator in paper).
-maxtausquared <- 1000
 # Define omega for the Basis Functions
 omega <- (2 * pi * (0:(n-1)))/n
 # Define lambda for the half-t prior
 lambda = 1
 # Define degrees of freedom for half-t prior
-# Cauchy
-nu = 1 
+# Cauchy nu = 1
+nu = 3
 # Define eta as the other scale parameter for half-t prior
 # eta = 1 gives standard Cauchy; higher eta gives wider Cauchy
 eta = 1
 # Define D's main diagonal
+# D is a measure of prior variance
 # Identity D:
 # D = rep(1, K)
-# Slow Decaying D
-D = exp(0.12 * -(0:(K-1)))
-plot(D)
+# D = c((sqrt(2)*pi*(1:K))^(-2)) * 100
+D = c((sqrt(2)*pi*(1:K))^(-2))
+
+# D = exp(0.12 * -(0:(K-1)))
 # Set number of iterations
 iter <- 10000
 
@@ -86,11 +80,12 @@ iter <- 10000
 # Initialize parameters
 #######################
 # set tau^2 value
-tausquared <- 0.1
+tausquared <- 5000
 # set intercept term
 alpha0 <- 0
 # set beta
-betavalues <- rnorm(K,mean = 0, sd = sqrt(tausquared))
+# betavalues <- rnorm(K,mean = 0, sd = sqrt(tausquared))
+betavalues <- rep(0,K)
 
 # Create matrix to store samples
 # ncol: number of parameters (alpha0, Beta, tau^2)
@@ -122,8 +117,10 @@ perio <- log((abs(fft(ts1)) ^ 2 / n))
 plot(omega, perio, type = "l")
 length((abs(fft(ts1)) ^ 2 / n))
 
-Rprof()
+#Rprof()
+pb = progress_bar$new(total = iter - 1)
 for (g in 2:iter) {
+  pb$tick()
   # g = 2
   # Extract alpha, beta and tau^2 from theta
   # alpha:
@@ -156,29 +153,17 @@ for (g in 2:iter) {
   # Tau^squared Update: Gibbs Sampler: conditional conjugate prior for the half-t
   # 1/gamma is the same as invgamma (so we dont need the other library)
   lambda = 1/rgamma(1, (nu+1)/2, nu/tsq + eta^2)
-  newtsq = 1/rgamma(1, (K + nu)/2, crossprod(Theta[g,-c(1,K+2)]) / 2 + nu/lambda)
+  newtsq = 1/rgamma(1, (K + nu)/2, sum(Theta[g,-c(1,K+2)]^2 / D) / 2 + nu/lambda)
   # Update Theta matrix with new tau squared value
   Theta[g,K+2] <- newtsq
+  #Theta[g,K+2] <- 100
 }
-Rprof(NULL)
+#Rprof(NULL)
 summaryRprof()
 
 # Remove burn-in
 burnin <- 250
 Theta <- Theta[-(1:burnin),]
-
-plot(Theta[,1], type = "l")
-# betas
-plot(Theta[,2], type = "l")
-
-
-par(mfrow = c(2,5), mar = c(4.2, 4.2, 2, 0.2))
-for(m in 2:(K+1)){
-  plot(Theta[,m], type = "l")
-}
-
-# plot tau estimate
-plot(Theta[,K+2], type = "l")
 
 # Plot the Spectral Density Estimates
 #pdf(file = "Spectral_Density_Estimates.pdf",
@@ -186,7 +171,7 @@ plot(Theta[,K+2], type = "l")
 #    height = 5,)
 specdens <- exp(cbind(1,X) %*% t(Theta[ ,-(K+2)]))
 par(mfrow = c(1, 1))
-plot(x =c(), y=c(), xlim = range(omega), ylim = range(log(specdens)), ylab = "Spectral Density", xlab = "omega",
+plot(x =c(), y=c(), xlim = c(0,3), ylim = range(log(specdens)), ylab = "Spectral Density", xlab = "omega",
      main = "Spectral Density Estimates \nwith True Spectral Density")
 for(h in sample(ncol(specdens), 1000, replace = FALSE)){
   lines(x = omega, y = log(specdens[,h]), col = rgb(0, 0, 0, 0.2))
@@ -204,19 +189,20 @@ summary_stats <- data.frame("lower" = apply(specdens, 1, FUN = function(x){quant
 
 
 # Plot with the bounds:
-#pdf(file = "Posterior_Mean.pdf",
-#    width = 10,
-#    height = 5,)
+pdf(file = "Posterior_Mean.pdf",
+    width = 10,
+    height = 5,)
 par(mfrow = c(1, 1))
-plot(x =c(), y=c(), xlim = range(omega), ylim = range(specdens), ylab = "Spectral Density", xlab = "omega",
-     main = "Posterior Mean and\n 95% Confidence Interval")
+plot(x =c(), y=c(), xlim = c(0,3), ylim = range(specdens), ylab = "Spectral Density", xlab = "omega",
+     main = "Posterior Mean and\n 95% Credible Interval")
 polygon(x = c(omega,rev(omega)), y = c(summary_stats$lower, rev(summary_stats$upper)), col = "darkgrey", border = NA)
 #lines(x = omega, y = summary_stats$lower, lty = 2, col = "darkgrey")
 lines(x = omega, y = summary_stats$mean, col = "black")
 #lines(x = omega, y = summary_stats$upper, lty = 2, col = "darkgrey")
 lines(x = omega, y = arma_spec(omega = omega, phi = phi), col = "red", lwd = 2)
+lines(x = omega, y = exp(perio), col = "lightgrey")
 legend("topright", col = c("black", "red"), lwd = c(1,2), legend = c("Posterior Mean", "True Spectral Density"))
-#dev.off()
+dev.off()
 
 mean((arma_spec(omega = omega, phi = phi) - summary_stats$mean)^2)
 # for n = 2000
@@ -224,5 +210,41 @@ mean((arma_spec(omega = omega, phi = phi) - summary_stats$mean)^2)
 
 # for n = 4000
 # 0.6510
+
+##############
+# Trace Plots
+##############
+
+# Beta Trace Plots
+pdf(file = "BetaTrace_AR1.pdf",
+    width = 12,
+    height = 6)
+par(mfrow = c(2,5), mar = c(4.2, 4.2, 2, 0.2))
+for(m in 2:(K+1)){
+  plot(Theta[,m], type = "l")
+}
+mtext(text = "Beta Trace Plots AR(1)", outer = TRUE, line = -1.5)
+dev.off()
+
+# plot tau^2 estimate
+pdf(file = "tausquaredTrace_AR1.pdf",
+    width = 12,
+    height = 6)
+par(mfrow = c(1,1))
+plot(Theta[,K+2], type = "l")
+dev.off()
+
+# plot alpha estimate
+pdf(file = "AlphaTrace_AR1.pdf",
+    width = 12,
+    height = 6)
+par(mfrow = c(1,1))
+plot(Theta[,1], type = "l")
+dev.off()
+
+
+table(sign(diff(Theta[,(2:(K+1))])))
+# 15% acceptance rate approximately
+
 
 
