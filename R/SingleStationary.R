@@ -1,7 +1,7 @@
 # Single Stationary Time Series
 library(mvtnorm)
 library(progress)
-set.seed(1080)
+set.seed(100)
 source("R/whittle_post.R")
 source("R/gr_single.R")
 source("R/he_single.R")
@@ -18,7 +18,7 @@ burn <- 50
 
 # Create coefficient phi
 # For AR(1)
-# phi <- 0.5
+phi <- 0.5
 
 # AR(2)
 # phi <- c(1.4256, -0.9)
@@ -47,22 +47,23 @@ K <- 10
 alphabeta <- K + 1
 # prior intercept variance (variance associated with the alpha_0 prior)
 sigmasalpha <- 100
-# maximum value for tau^2 (Indicator in paper).
-maxtausquared <- 1000
 # Define omega for the Basis Functions
 omega <- (2 * pi * (0:(n-1)))/n
 # Define lambda for the half-t prior
 lambda = 1
 # Define degrees of freedom for half-t prior
-# Cauchy
-nu = 1 
+# Cauchy nu = 1
+nu = 3
 # Define eta as the other scale parameter for half-t prior
 # eta = 1 gives standard Cauchy; higher eta gives wider Cauchy
 eta = 1
 # Define D's main diagonal
+# D is a measure of prior variance
 # Identity D:
 # D = rep(1, K)
+# D = c((sqrt(2)*pi*(1:K))^(-2)) * 100
 D = c((sqrt(2)*pi*(1:K))^(-2))
+
 # D = exp(0.12 * -(0:(K-1)))
 # Set number of iterations
 iter <- 10000
@@ -71,11 +72,12 @@ iter <- 10000
 # Initialize parameters
 #######################
 # set tau^2 value
-tausquared <- 100
+tausquared <- 5000
 # set intercept term
 alpha0 <- 0
 # set beta
-betavalues <- rnorm(K,mean = 0, sd = sqrt(tausquared))
+# betavalues <- rnorm(K,mean = 0, sd = sqrt(tausquared))
+betavalues <- rep(0,K)
 
 # Create matrix to store samples
 # ncol: number of parameters (alpha0, Beta, tau^2)
@@ -146,6 +148,7 @@ for (g in 2:iter) {
   newtsq = 1/rgamma(1, (K + nu)/2, sum(Theta[g,-c(1,K+2)]^2 / D) / 2 + nu/lambda)
   # Update Theta matrix with new tau squared value
   Theta[g,K+2] <- newtsq
+  #Theta[g,K+2] <- 100
 }
 #Rprof(NULL)
 summaryRprof()
@@ -178,9 +181,9 @@ summary_stats <- data.frame("lower" = apply(specdens, 1, FUN = function(x){quant
 
 
 # Plot with the bounds:
-#pdf(file = "Posterior_Mean.pdf",
-#    width = 10,
-#    height = 5,)
+pdf(file = "Posterior_Mean.pdf",
+    width = 10,
+    height = 5,)
 par(mfrow = c(1, 1))
 plot(x =c(), y=c(), xlim = c(0,3), ylim = range(specdens), ylab = "Spectral Density", xlab = "omega",
      main = "Posterior Mean and\n 95% Credible Interval")
@@ -189,8 +192,9 @@ polygon(x = c(omega,rev(omega)), y = c(summary_stats$lower, rev(summary_stats$up
 lines(x = omega, y = summary_stats$mean, col = "black")
 #lines(x = omega, y = summary_stats$upper, lty = 2, col = "darkgrey")
 lines(x = omega, y = arma_spec(omega = omega, phi = phi), col = "red", lwd = 2)
+lines(x = omega, y = exp(perio), col = "lightgrey")
 legend("topright", col = c("black", "red"), lwd = c(1,2), legend = c("Posterior Mean", "True Spectral Density"))
-#dev.off()
+dev.off()
 
 mean((arma_spec(omega = omega, phi = phi) - summary_stats$mean)^2)
 # for n = 2000
@@ -204,21 +208,34 @@ mean((arma_spec(omega = omega, phi = phi) - summary_stats$mean)^2)
 ##############
 
 # Beta Trace Plots
+pdf(file = "BetaTrace_AR1.pdf",
+    width = 12,
+    height = 6)
 par(mfrow = c(2,5), mar = c(4.2, 4.2, 2, 0.2))
 for(m in 2:(K+1)){
   plot(Theta[,m], type = "l")
 }
+mtext(text = "Beta Trace Plots AR(1)", outer = TRUE, line = -1.5)
+dev.off()
 
 # plot tau^2 estimate
+pdf(file = "tausquaredTrace_AR1.pdf",
+    width = 12,
+    height = 6)
 par(mfrow = c(1,1))
 plot(Theta[,K+2], type = "l")
+dev.off()
 
 # plot alpha estimate
+pdf(file = "AlphaTrace_AR1.pdf",
+    width = 12,
+    height = 6)
 par(mfrow = c(1,1))
 plot(Theta[,1], type = "l")
+dev.off()
 
 
-
-
+table(sign(diff(Theta[,(2:(K+1))])))
+# 15% acceptance rate approximately
 
 
