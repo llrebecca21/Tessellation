@@ -26,24 +26,14 @@ phi <- 0.5
 # For AR(3)
 # phi <- c(1.4256, -0.7344, 0.1296)
 
-
-# Model 1 : AR(1) with phi = 0.5
-# Rprof()
-#ts1 <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
-# Rprof(NULL)
-# summaryRprof()
-
 # Need to Create ~ 10 copies of the time series and store it in a matrix
+# Each column of the matrix contains a time series
 num_timeseries <- 10
 # create matrix to store the time series
 matrix_timeseries <- matrix(NA, nrow = n, ncol = num_timeseries)
 for(r in 1:num_timeseries){
   matrix_timeseries[,r] <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
 }
-
-# Model 2 : AR(3)
-# given by x_t = 1.4256 x_(t-1) - 0.7344 x_(t-2) + 0.1296 x_(t-3) + \epsilon_t
-ts1 <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
 
 #################
 # MCMC parameters
@@ -74,7 +64,7 @@ D = c((sqrt(2)*pi*(1:K))^(-2))
 
 # D = exp(0.12 * -(0:(K-1)))
 # Set number of iterations
-iter <- 10000
+iter <- 2000
 
 #######################
 # Initialize parameters
