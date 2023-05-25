@@ -1,4 +1,4 @@
-#' Whittle Post
+#' alpha,beta conditional Posterior
 #'
 #' @param ab  : (K+1) column vector of alpha and beta values
 #' @param X  : basis vector matrix
