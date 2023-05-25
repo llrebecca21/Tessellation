@@ -2,9 +2,9 @@
 library(mvtnorm)
 library(progress)
 set.seed(100)
-source("R/whittle_post.R")
-source("R/gr_single.R")
-source("R/he_single.R")
+source("R/posterior_multiple.R")
+source("R/gr_multiple.R")
+source("R/he_multiple.R")
 source("R/Chol_sampling.R")
 source("R/arma_spec.R")
 
@@ -47,7 +47,7 @@ for(i in 1:(ncol(matrix_timeseries))){
 #################
 
 # number of basis functions/number of beta values
-K <- 10
+K <- 11
 # alphabeta stores number of beta values (beta_{1:K}) + intercept term (alpha_0)
 # alphabeta <- K + 1
 # prior intercept variance (variance associated with the alpha_0 prior)
@@ -65,15 +65,15 @@ eta = 1
 # Define D's main diagonal
 # D is a measure of prior variance
 # Identity D:
-# D = rep(1, K)
-
+D = rep(1, K)
 
 # D = c((sqrt(2)*pi*(1:K))^(-2)) * 100
-D = c((sqrt(2)*pi*(1:K))^(-2))
+# D = c((sqrt(2)*pi*(1:K))^(-2))
 
 # D = exp(0.12 * -(0:(K-1)))
+
 # Set number of iterations
-iter <- 2000
+iter <- 10000
 
 #######################
 # Initialize parameters
@@ -110,56 +110,56 @@ Theta[1,] <- c(betavalues, tausquared)
 # MCMC Algorithm
 #####################
 # Define y_n(\omega_j) for the posterior function below
-
 perio <- (abs(mvfft(matrix_timeseries)) ^ 2 / n)
 
-par(mfrow = c(1,1))
-plot(omega, perio[,1], type = "l", xlim = c(0,pi))
-# nrow((abs(mvfft(matrix_timeseries)) ^ 2 / n))
+par(mfrow = c(5,2))
+for(i in 1:(ncol(perio))){
+  plot(omega, perio[,i], type = "l", xlim = c(0,pi))
+}
+
+# Calculate ybar(omega_j)
+y_bar <- rowMeans(perio)
 
 #Rprof()
 pb = progress_bar$new(total = iter - 1)
 for (g in 2:iter) {
   pb$tick()
   # g = 2
-  # Extract alpha, beta and tau^2 from theta
-  # alpha:
-  a = Theta[g - 1, 1]
+  # Extract beta and tau^2 from theta
   # beta:
-  b = Theta[g - 1, -c(1, K+2)]
+  b = Theta[g - 1, 1:K]
   # tau^squared:
-  tsq = Theta[g - 1, K + 2]
+  tsq = Theta[g - 1, K + 1]
   # Metropolis Hastings Step
   # Maximum A Posteriori (MAP) estimate : finds the alpha and beta that gives us the mode of the conditional posterior of beta and alpha_0 conditioned on y
-  map <- optim(par = c(a,b), fn = whittle_post, gr = gr_single, method ="BFGS", control = list(fnscale = -1),
-               X = X, sumX = sumX, tsq = tsq, perio = perio, sigmasalpha = sigmasalpha, D = D)$par
+  map <- optim(par = b, fn = posterior_multiple, gr = gr_multiple, method ="BFGS", control = list(fnscale = -1),
+               X = X, sumX = sumX, tsq = tsq, y_bar = y_bar, D = D, num_timeseries = num_timeseries)$par
   # Call the hessian function
-  norm_precision <- he_single(ab = map, X = X, sumX = sumX, tsq = tsq, perio = perio, sigmasalpha = sigmasalpha, D = D)
+  norm_precision <- he_multiple(b = map, X = X, sumX = sumX, tsq = tsq, y_bar = y_bar, D = D , num_timeseries = num_timeseries)
   # Calculate the alpha beta proposals, using Cholesky Sampling
-  betaprop <- Chol_sampling(Lt = chol(norm_precision), d = K + 1, beta_c = map)
-  
-  #betaprop <- rmvnorm(n = 1, mean = Theta[g - 1, -(K+2)], sigma = 0.03 * diag(K+1))
+  betaprop <- Chol_sampling(Lt = chol(norm_precision), d = K, beta_c = map)
+
   # calculate acceptance ratio
-  prop_ratio <- min(1, exp(whittle_post(ab = betaprop, X = X, sumX = sumX, tsq = tsq, perio = perio, sigmasalpha = sigmasalpha, D = D) -
-                             whittle_post(ab = c(a,b), X = X, sumX = sumX, tsq = tsq, perio = perio, sigmasalpha = sigmasalpha, D = D)))
+  prop_ratio <- min(1, exp(posterior_multiple(b = betaprop, X = X, sumX = sumX, tsq = tsq, y_bar = y_bar,  D = D, num_timeseries = num_timeseries) -
+                             posterior_multiple(b = b, X = X, sumX = sumX, tsq = tsq, y_bar = y_bar,  D = D, num_timeseries = num_timeseries)))
   # create acceptance decision
   accept <- runif(1)
   if(accept < prop_ratio){
-    # accept betaprop as new alpha and beta
-    Theta[g, -(K+2)] <- betaprop
+    # accept betaprop as new beta
+    Theta[g, -(K+1)] <- betaprop
   }else{
-    Theta[g, -(K+2)] <- c(a,b)
+    Theta[g, -(K+1)] <- b
   }
-  # Tau^squared Update: Gibbs Sampler: conditional conjugate prior for the half-t
+  # Tau^2 Update: Gibbs Sampler: conditional conjugate prior for the half-t
   # 1/gamma is the same as invgamma (so we dont need the other library)
   lambda = 1/rgamma(1, (nu+1)/2, nu/tsq + eta^2)
-  newtsq = 1/rgamma(1, (K + nu)/2, sum(Theta[g,-c(1,K+2)]^2 / D) / 2 + nu/lambda)
+  newtsq = 1/rgamma(1, (K + nu)/2, sum(Theta[g, -(K+1)]^2 / D) / 2 + nu/lambda)
   # Update Theta matrix with new tau squared value
-  Theta[g,K+2] <- newtsq
+  Theta[g,K+1] <- newtsq
   #Theta[g,K+2] <- 100
 }
 #Rprof(NULL)
-summaryRprof()
+# summaryRprof()
 
 # Remove burn-in
 burnin <- 250
@@ -169,7 +169,7 @@ Theta <- Theta[-(1:burnin),]
 #pdf(file = "Spectral_Density_Estimates.pdf",
 #    width = 10,
 #    height = 5,)
-specdens <- exp(cbind(1,X) %*% t(Theta[ ,-(K+2)]))
+specdens <- exp(X %*% t(Theta[ ,-(K+1)]))
 par(mfrow = c(1, 1))
 plot(x =c(), y=c(), xlim = c(0,3), ylim = range(log(specdens)), ylab = "Spectral Density", xlab = "omega",
      main = "Spectral Density Estimates \nwith True Spectral Density")
@@ -189,9 +189,9 @@ summary_stats <- data.frame("lower" = apply(specdens, 1, FUN = function(x){quant
 
 
 # Plot with the bounds:
-pdf(file = "Posterior_Mean.pdf",
-    width = 10,
-    height = 5,)
+# pdf(file = "Posterior_Mean.pdf",
+#     width = 10,
+#     height = 5,)
 par(mfrow = c(1, 1))
 plot(x =c(), y=c(), xlim = c(0,3), ylim = range(specdens), ylab = "Spectral Density", xlab = "omega",
      main = "Posterior Mean and\n 95% Credible Interval")
@@ -200,51 +200,40 @@ polygon(x = c(omega,rev(omega)), y = c(summary_stats$lower, rev(summary_stats$up
 lines(x = omega, y = summary_stats$mean, col = "black")
 #lines(x = omega, y = summary_stats$upper, lty = 2, col = "darkgrey")
 lines(x = omega, y = arma_spec(omega = omega, phi = phi), col = "red", lwd = 2)
-lines(x = omega, y = exp(perio), col = "lightgrey")
+#lines(x = omega, y = exp(perio), col = "lightgrey")
 legend("topright", col = c("black", "red"), lwd = c(1,2), legend = c("Posterior Mean", "True Spectral Density"))
-dev.off()
+#dev.off()
 
 mean((arma_spec(omega = omega, phi = phi) - summary_stats$mean)^2)
-# for n = 2000
-# 1.183
+# for n = 1000
+# 0.0211
 
-# for n = 4000
-# 0.6510
 
 ##############
 # Trace Plots
 ##############
 
 # Beta Trace Plots
-pdf(file = "BetaTrace_AR1.pdf",
-    width = 12,
-    height = 6)
-par(mfrow = c(2,5), mar = c(4.2, 4.2, 2, 0.2))
-for(m in 2:(K+1)){
+# pdf(file = "BetaTrace_AR1.pdf",
+#     width = 12,
+#     height = 6)
+par(mfrow = c(3,4), mar = c(4.2, 4.2, 2, 0.2))
+for(m in 1:(K)){
   plot(Theta[,m], type = "l")
 }
 mtext(text = "Beta Trace Plots AR(1)", outer = TRUE, line = -1.5)
-dev.off()
+#dev.off()
 
 # plot tau^2 estimate
-pdf(file = "tausquaredTrace_AR1.pdf",
-    width = 12,
-    height = 6)
-par(mfrow = c(1,1))
-plot(Theta[,K+2], type = "l")
-dev.off()
+# pdf(file = "tausquaredTrace_AR1.pdf",
+#     width = 12,
+#     height = 6)
+#par(mfrow = c(1,1))
+plot(Theta[,K+1], type = "l")
+#dev.off()
 
-# plot alpha estimate
-pdf(file = "AlphaTrace_AR1.pdf",
-    width = 12,
-    height = 6)
-par(mfrow = c(1,1))
-plot(Theta[,1], type = "l")
-dev.off()
-
-
-table(sign(diff(Theta[,(2:(K+1))])))
-# 15% acceptance rate approximately
+table(sign(diff(Theta[,1])))
+# 27% acceptance rate approximately
 
 
 
