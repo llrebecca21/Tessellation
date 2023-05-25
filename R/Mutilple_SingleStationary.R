@@ -35,16 +35,23 @@ for(r in 1:num_timeseries){
   matrix_timeseries[,r] <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
 }
 
+
+# Plot the time series that will be used
+par(mfrow = c(5,2))
+for(i in 1:(ncol(matrix_timeseries))){
+  plot(x = matrix_timeseries[,i], type = "l")
+}
+
 #################
 # MCMC parameters
 #################
 
 # number of basis functions/number of beta values
 K <- 10
-# nbeta stores number of beta values (beta_{1:K}) + intercept term (alpha_0)
-alphabeta <- K + 1
+# alphabeta stores number of beta values (beta_{1:K}) + intercept term (alpha_0)
+# alphabeta <- K + 1
 # prior intercept variance (variance associated with the alpha_0 prior)
-sigmasalpha <- 100
+# sigmasalpha <- 100
 # Define omega for the Basis Functions
 omega <- (2 * pi * (0:(n-1)))/n
 # Define lambda for the half-t prior
@@ -59,6 +66,8 @@ eta = 1
 # D is a measure of prior variance
 # Identity D:
 # D = rep(1, K)
+
+
 # D = c((sqrt(2)*pi*(1:K))^(-2)) * 100
 D = c((sqrt(2)*pi*(1:K))^(-2))
 
@@ -72,30 +81,30 @@ iter <- 2000
 # set tau^2 value
 tausquared <- 5000
 # set intercept term
-alpha0 <- 0
+# alpha0 <- 0
 # set beta
 # betavalues <- rnorm(K,mean = 0, sd = sqrt(tausquared))
 betavalues <- rep(0,K)
 
 # Create matrix to store samples
-# ncol: number of parameters (alpha0, Beta, tau^2)
-Theta <- matrix(NA, nrow = iter, ncol = K + 2)
+# ncol: number of parameters (Beta, tau^2)
+Theta <- matrix(NA, nrow = iter, ncol = K + 1)
 
 # Create matrix of the basis functions
 # unscale by n (i.e. 2/n)
 # fix fourier frequencies by multiplying by 2 (inside cosine function)
-X <- outer(X = omega, Y = 1:K, FUN = function(x,y){cos(y * x) / sqrt(n / 2)})
+X <- outer(X = omega, Y = 0:(K-1), FUN = function(x,y){cos(y * x) / sqrt(n / 2)})
 # Check X is orthonormal basis
 dim(X)
-# 2000 rows : n
-# 20: K
+# Fix the scaling of the first column
+X[,1] <- X[,1]/sqrt(2)
 round(crossprod(X),5)
 # Specify Sum of X for the posterior function later
 # 1^T_n X Beta part in the paper (excluding the Beta)
 sumX <- c(crossprod(rep(1, nrow(X)), X))
 length(sumX)
 # Initialize first row of Theta
-Theta[1,] <- c(alpha0, betavalues, tausquared)
+Theta[1,] <- c(betavalues, tausquared)
 
 #####################
 # MCMC Algorithm
