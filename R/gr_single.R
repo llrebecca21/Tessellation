@@ -22,7 +22,7 @@ gr_single <- function(ab, X, sumX, tsq, perio, sigmasalpha, D){
   # derivative of log of the whittle_post with respect to alpha
   derivalpha = -0.5 * (2 * a / sigmasalpha - length(sumX) - sum(exp_res))
   # derivative of log of the whittle_post with respect to beta (vector)
-  derivbeta = -0.5 * (2 * (b / D) / tsq - sumX - colSums(X * exp_res))
+  derivbeta = -0.5 * (2 * (b / D) / tsq + sumX - colSums(X * exp_res))
   # combine the two derivative for the gradient vector
   grad = c(derivalpha, derivbeta)
   return(grad)
