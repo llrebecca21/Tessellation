@@ -111,10 +111,11 @@ Theta[1,] <- c(betavalues, tausquared)
 #####################
 # Define y_n(\omega_j) for the posterior function below
 
-perio <- log((abs(fft(ts1)) ^ 2 / n))
+perio <- (abs(mvfft(matrix_timeseries)) ^ 2 / n)
 
-plot(omega, perio, type = "l")
-length((abs(fft(ts1)) ^ 2 / n))
+par(mfrow = c(1,1))
+plot(omega, perio[,1], type = "l", xlim = c(0,pi))
+# nrow((abs(mvfft(matrix_timeseries)) ^ 2 / n))
 
 #Rprof()
 pb = progress_bar$new(total = iter - 1)
