@@ -1,4 +1,4 @@
-#' he_single
+#' Calculate the negative hessian for a single stationary time series
 #'
 #' @param ab : (K+1) column vector of alpha and beta values
 #' @param X  : basis vector matrix
