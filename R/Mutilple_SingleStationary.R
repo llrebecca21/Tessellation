@@ -1,7 +1,7 @@
 # Multiple Single Stationary Time Series from the same underlying spectra
 library(mvtnorm)
 library(progress)
-set.seed(100)
+set.seed(1080)
 source("R/posterior_multiple.R")
 source("R/gr_multiple.R")
 source("R/he_multiple.R")
@@ -42,6 +42,18 @@ for(i in 1:(ncol(matrix_timeseries))){
   plot(x = matrix_timeseries[,i], type = "l")
 }
 
+# Define Periodogram
+# Define y_n(\omega_j) for the posterior function below
+perio <- (abs(mvfft(matrix_timeseries)) ^ 2 / n)
+
+par(mfrow = c(5,2))
+for(i in 1:(ncol(perio))){
+  plot(omega, perio[,i], type = "l", xlim = c(0,pi))
+}
+
+# Calculate ybar(omega_j)
+y_bar <- rowMeans(perio)
+
 #################
 # MCMC parameters
 #################
@@ -65,10 +77,10 @@ eta = 1
 # Define D's main diagonal
 # D is a measure of prior variance
 # Identity D:
-D = rep(1, K)
+# D = rep(1, K)
 
 # D = c((sqrt(2)*pi*(1:K))^(-2)) * 100
-# D = c((sqrt(2)*pi*(1:K))^(-2))
+D = c(1, (sqrt(2)*pi*(1:(K-1)))^(-2))
 
 # D = exp(0.12 * -(0:(K-1)))
 
@@ -79,12 +91,16 @@ iter <- 10000
 # Initialize parameters
 #######################
 # set tau^2 value
-tausquared <- 5000
+tausquared <- 50
 # set intercept term
 # alpha0 <- 0
 # set beta
 # betavalues <- rnorm(K,mean = 0, sd = sqrt(tausquared))
-betavalues <- rep(0,K)
+# Initialize beta at 0
+# betavalues <- rep(0,K)
+
+# Initialize beta using least squares solution
+betavalues <- c(crossprod(X,log(y_bar))) / c(n, rep(n/2, K-1))
 
 # Create matrix to store samples
 # ncol: number of parameters (Beta, tau^2)
@@ -92,12 +108,12 @@ Theta <- matrix(NA, nrow = iter, ncol = K + 1)
 
 # Create matrix of the basis functions
 # unscale by n (i.e. 2/n)
-# fix fourier frequencies by multiplying by 2 (inside cosine function)
-X <- outer(X = omega, Y = 0:(K-1), FUN = function(x,y){cos(y * x) / sqrt(n / 2)})
-# Check X is orthonormal basis
+# fix fourier frequencies
+X <- outer(X = omega, Y = 0:(K-1), FUN = function(x,y){cos(y * x)})
+# Check X is orthogonal basis
 dim(X)
 # Fix the scaling of the first column
-X[,1] <- X[,1]/sqrt(2)
+#X[,1] <- X[,1]/sqrt(2)
 round(crossprod(X),5)
 # Specify Sum of X for the posterior function later
 # 1^T_n X Beta part in the paper (excluding the Beta)
@@ -109,16 +125,6 @@ Theta[1,] <- c(betavalues, tausquared)
 #####################
 # MCMC Algorithm
 #####################
-# Define y_n(\omega_j) for the posterior function below
-perio <- (abs(mvfft(matrix_timeseries)) ^ 2 / n)
-
-par(mfrow = c(5,2))
-for(i in 1:(ncol(perio))){
-  plot(omega, perio[,i], type = "l", xlim = c(0,pi))
-}
-
-# Calculate ybar(omega_j)
-y_bar <- rowMeans(perio)
 
 #Rprof()
 pb = progress_bar$new(total = iter - 1)
@@ -162,7 +168,7 @@ for (g in 2:iter) {
 # summaryRprof()
 
 # Remove burn-in
-burnin <- 250
+burnin <- 10
 Theta <- Theta[-(1:burnin),]
 
 # Plot the Spectral Density Estimates
@@ -189,11 +195,11 @@ summary_stats <- data.frame("lower" = apply(specdens, 1, FUN = function(x){quant
 
 
 # Plot with the bounds:
-# pdf(file = "Posterior_Mean.pdf",
-#     width = 10,
-#     height = 5,)
+pdf(file = "Posterior_Mean_Mulitple.pdf",
+    width = 10,
+    height = 5,)
 par(mfrow = c(1, 1))
-plot(x =c(), y=c(), xlim = c(0,3), ylim = range(specdens), ylab = "Spectral Density", xlab = "omega",
+plot(x =c(), y=c(), xlim = c(0,pi), ylim = range(specdens), ylab = "Spectral Density", xlab = "omega",
      main = "Posterior Mean and\n 95% Credible Interval")
 polygon(x = c(omega,rev(omega)), y = c(summary_stats$lower, rev(summary_stats$upper)), col = "darkgrey", border = NA)
 #lines(x = omega, y = summary_stats$lower, lty = 2, col = "darkgrey")
@@ -202,7 +208,7 @@ lines(x = omega, y = summary_stats$mean, col = "black")
 lines(x = omega, y = arma_spec(omega = omega, phi = phi), col = "red", lwd = 2)
 #lines(x = omega, y = exp(perio), col = "lightgrey")
 legend("topright", col = c("black", "red"), lwd = c(1,2), legend = c("Posterior Mean", "True Spectral Density"))
-#dev.off()
+dev.off()
 
 mean((arma_spec(omega = omega, phi = phi) - summary_stats$mean)^2)
 # for n = 1000
@@ -214,25 +220,25 @@ mean((arma_spec(omega = omega, phi = phi) - summary_stats$mean)^2)
 ##############
 
 # Beta Trace Plots
-# pdf(file = "BetaTrace_AR1.pdf",
-#     width = 12,
-#     height = 6)
+pdf(file = "BetaTrace_AR1_Multiple.pdf",
+    width = 12,
+    height = 6)
 par(mfrow = c(3,4), mar = c(4.2, 4.2, 2, 0.2))
 for(m in 1:(K)){
   plot(Theta[,m], type = "l")
 }
 mtext(text = "Beta Trace Plots AR(1)", outer = TRUE, line = -1.5)
-#dev.off()
+dev.off()
 
 # plot tau^2 estimate
-# pdf(file = "tausquaredTrace_AR1.pdf",
-#     width = 12,
-#     height = 6)
-#par(mfrow = c(1,1))
+pdf(file = "tausquaredTrace_AR1_Multiple.pdf",
+    width = 12,
+    height = 6)
+par(mfrow = c(1,1))
 plot(Theta[,K+1], type = "l")
-#dev.off()
+dev.off()
 
-table(sign(diff(Theta[,1])))
+mean(abs(sign(diff(Theta[,1]))))
 # 27% acceptance rate approximately
 
 
