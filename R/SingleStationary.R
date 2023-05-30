@@ -185,14 +185,14 @@ pdf(file = "Posterior_Mean.pdf",
     width = 10,
     height = 5,)
 par(mfrow = c(1, 1))
-plot(x =c(), y=c(), xlim = c(0,3), ylim = range(specdens), ylab = "Spectral Density", xlab = "omega",
+plot(x =c(), y=c(), xlim = c(0,3), ylim = range(log(specdens)), ylab = "Spectral Density", xlab = "omega",
      main = "Posterior Mean and\n 95% Credible Interval")
-polygon(x = c(omega,rev(omega)), y = c(summary_stats$lower, rev(summary_stats$upper)), col = "darkgrey", border = NA)
+polygon(x = c(omega,rev(omega)), y = log(c(summary_stats$lower, rev(summary_stats$upper))), col = "darkgrey", border = NA)
 #lines(x = omega, y = summary_stats$lower, lty = 2, col = "darkgrey")
-lines(x = omega, y = summary_stats$mean, col = "black")
+lines(x = omega, y = log(summary_stats$mean), col = "black")
 #lines(x = omega, y = summary_stats$upper, lty = 2, col = "darkgrey")
-lines(x = omega, y = arma_spec(omega = omega, phi = phi), col = "red", lwd = 2)
-lines(x = omega, y = exp(perio), col = "lightgrey")
+lines(x = omega, y = log(arma_spec(omega = omega, phi = phi)), col = "red", lwd = 2)
+lines(x = omega, y = log(exp(perio)), col = "lightgrey")
 legend("topright", col = c("black", "red"), lwd = c(1,2), legend = c("Posterior Mean", "True Spectral Density"))
 dev.off()
 
@@ -238,4 +238,5 @@ dev.off()
 table(sign(diff(Theta[,(2:(K+1))])))
 # 15% acceptance rate approximately
 
+mean(arma_spec(omega = omega, phi = phi) > summary_stats$upper | arma_spec(omega = omega, phi = phi) < summary_stats$lower)
 
