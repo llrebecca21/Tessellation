@@ -1,7 +1,7 @@
 # Multiple Single Stationary Time Series from the same underlying spectra
 library(mvtnorm)
 library(progress)
-set.seed(1080)
+set.seed(31)
 source("R/posterior_multiple.R")
 source("R/gr_multiple.R")
 source("R/he_multiple.R")
@@ -12,7 +12,8 @@ source("R/arma_spec.R")
 
 # set hyper-parameters
 # length of time series
-n <-  1000
+n <-  35
+omega <- (2 * pi * (0:(n-1)))/n
 # burn-in period for ARsim
 burn <- 50
 
@@ -59,7 +60,7 @@ y_bar <- rowMeans(perio)
 #################
 
 # number of basis functions/number of beta values
-K <- 11
+K <- 5
 # alphabeta stores number of beta values (beta_{1:K}) + intercept term (alpha_0)
 # alphabeta <- K + 1
 # prior intercept variance (variance associated with the alpha_0 prior)
@@ -77,10 +78,11 @@ eta = 1
 # Define D's main diagonal
 # D is a measure of prior variance
 # Identity D:
-# D = rep(1, K)
+D = rep(1, K)
+sigmasquare = 100
 
 # D = c((sqrt(2)*pi*(1:K))^(-2)) * 100
-D = c(1, (sqrt(2)*pi*(1:(K-1)))^(-2))
+#D = c(1, (sqrt(2)*pi*(1:(K-1)))^(-2))
 
 # D = exp(0.12 * -(0:(K-1)))
 
@@ -92,6 +94,7 @@ iter <- 10000
 #######################
 # set tau^2 value
 tausquared <- 50
+Sigma = c(sigmasquare, D * tausquared)
 # set intercept term
 # alpha0 <- 0
 # set beta
@@ -99,17 +102,18 @@ tausquared <- 50
 # Initialize beta at 0
 # betavalues <- rep(0,K)
 
-# Initialize beta using least squares solution
-betavalues <- c(crossprod(X,log(y_bar))) / c(n, rep(n/2, K-1))
-
 # Create matrix to store samples
 # ncol: number of parameters (Beta, tau^2)
-Theta <- matrix(NA, nrow = iter, ncol = K + 1)
+Theta <- matrix(NA, nrow = iter, ncol = K + 2)
 
 # Create matrix of the basis functions
 # unscale by n (i.e. 2/n)
 # fix fourier frequencies
-X <- outer(X = omega, Y = 0:(K-1), FUN = function(x,y){cos(y * x)})
+X <- outer(X = omega, Y = 0:K, FUN = function(x,y){cos(y * x)})
+
+# Initialize beta using least squares solution
+betavalues <- c(crossprod(X,log(y_bar))) / c(n, rep(n/2, K))
+
 # Check X is orthogonal basis
 dim(X)
 # Fix the scaling of the first column
@@ -133,36 +137,37 @@ for (g in 2:iter) {
   # g = 2
   # Extract beta and tau^2 from theta
   # beta:
-  b = Theta[g - 1, 1:K]
+  b = Theta[g - 1, 1:(K+1)]
   # tau^squared:
-  tsq = Theta[g - 1, K + 1]
+  tsq = Theta[g - 1, K + 2]
   # Metropolis Hastings Step
   # Maximum A Posteriori (MAP) estimate : finds the alpha and beta that gives us the mode of the conditional posterior of beta and alpha_0 conditioned on y
   map <- optim(par = b, fn = posterior_multiple, gr = gr_multiple, method ="BFGS", control = list(fnscale = -1),
-               X = X, sumX = sumX, tsq = tsq, y_bar = y_bar, D = D, num_timeseries = num_timeseries)$par
+               X = X, sumX = sumX, tsq = tsq, y_bar = y_bar, D = Sigma, num_timeseries = num_timeseries)$par
   # Call the hessian function
-  norm_precision <- he_multiple(b = map, X = X, sumX = sumX, tsq = tsq, y_bar = y_bar, D = D , num_timeseries = num_timeseries)
+  norm_precision <- he_multiple(b = map, X = X, sumX = sumX, tsq = tsq, y_bar = y_bar, D = Sigma , num_timeseries = num_timeseries)
   # Calculate the alpha beta proposals, using Cholesky Sampling
-  betaprop <- Chol_sampling(Lt = chol(norm_precision), d = K, beta_c = map)
+  betaprop <- Chol_sampling(Lt = chol(norm_precision), d = K + 1, beta_c = map)
 
   # calculate acceptance ratio
-  prop_ratio <- min(1, exp(posterior_multiple(b = betaprop, X = X, sumX = sumX, tsq = tsq, y_bar = y_bar,  D = D, num_timeseries = num_timeseries) -
-                             posterior_multiple(b = b, X = X, sumX = sumX, tsq = tsq, y_bar = y_bar,  D = D, num_timeseries = num_timeseries)))
+  prop_ratio <- min(1, exp(posterior_multiple(b = betaprop, X = X, sumX = sumX, tsq = tsq, y_bar = y_bar,  D = Sigma, num_timeseries = num_timeseries) -
+                             posterior_multiple(b = b, X = X, sumX = sumX, tsq = tsq, y_bar = y_bar,  D = Sigma, num_timeseries = num_timeseries)))
   # create acceptance decision
   accept <- runif(1)
   if(accept < prop_ratio){
     # accept betaprop as new beta
-    Theta[g, -(K+1)] <- betaprop
+    Theta[g, -(K+2)] <- betaprop
   }else{
-    Theta[g, -(K+1)] <- b
+    Theta[g, -(K+2)] <- b
   }
   # Tau^2 Update: Gibbs Sampler: conditional conjugate prior for the half-t
   # 1/gamma is the same as invgamma (so we dont need the other library)
   lambda = 1/rgamma(1, (nu+1)/2, nu/tsq + eta^2)
-  newtsq = 1/rgamma(1, (K + nu)/2, sum(Theta[g, -(K+1)]^2 / D) / 2 + nu/lambda)
+  newtsq = 1/rgamma(1, (K + 1 + nu)/2, sum(Theta[g, -(K+2)]^2 / D) / 2 + nu/lambda)
   # Update Theta matrix with new tau squared value
-  Theta[g,K+1] <- newtsq
+  Theta[g,K+2] <- newtsq
   #Theta[g,K+2] <- 100
+  Sigma = c(sigmasquare, D * newtsq)
 }
 #Rprof(NULL)
 # summaryRprof()
@@ -175,7 +180,7 @@ Theta <- Theta[-(1:burnin),]
 #pdf(file = "Spectral_Density_Estimates.pdf",
 #    width = 10,
 #    height = 5,)
-specdens <- exp(X %*% t(Theta[ ,-(K+1)]))
+specdens <- exp(X %*% t(Theta[ ,-(K+2)]))
 par(mfrow = c(1, 1))
 plot(x =c(), y=c(), xlim = c(0,3), ylim = range(log(specdens)), ylab = "Spectral Density", xlab = "omega",
      main = "Spectral Density Estimates \nwith True Spectral Density")
@@ -199,15 +204,16 @@ pdf(file = "Posterior_Mean_Mulitple.pdf",
     width = 10,
     height = 5,)
 par(mfrow = c(1, 1))
-plot(x =c(), y=c(), xlim = c(0,pi), ylim = range(specdens), ylab = "Spectral Density", xlab = "omega",
+plot(x =c(), y=c(), xlim = c(0,pi), ylim = range(log(specdens)), ylab = "Spectral Density", xlab = "omega",
      main = "Posterior Mean and\n 95% Credible Interval")
-polygon(x = c(omega,rev(omega)), y = c(summary_stats$lower, rev(summary_stats$upper)), col = "darkgrey", border = NA)
+polygon(x = c(omega,rev(omega)), y = log(c(summary_stats$lower, rev(summary_stats$upper))), col = "darkgrey", border = NA)
 #lines(x = omega, y = summary_stats$lower, lty = 2, col = "darkgrey")
-lines(x = omega, y = summary_stats$mean, col = "black")
+lines(x = omega, y = log(summary_stats$mean), col = "black")
 #lines(x = omega, y = summary_stats$upper, lty = 2, col = "darkgrey")
-lines(x = omega, y = arma_spec(omega = omega, phi = phi), col = "red", lwd = 2)
+lines(x = omega, y = log(arma_spec(omega = omega, phi = phi)), col = "red", lwd = 2)
 #lines(x = omega, y = exp(perio), col = "lightgrey")
 legend("topright", col = c("black", "red"), lwd = c(1,2), legend = c("Posterior Mean", "True Spectral Density"))
+lines(y = log(y_bar), x = omega, col = "orange")
 dev.off()
 
 mean((arma_spec(omega = omega, phi = phi) - summary_stats$mean)^2)
@@ -223,8 +229,8 @@ mean((arma_spec(omega = omega, phi = phi) - summary_stats$mean)^2)
 pdf(file = "BetaTrace_AR1_Multiple.pdf",
     width = 12,
     height = 6)
-par(mfrow = c(3,4), mar = c(4.2, 4.2, 2, 0.2))
-for(m in 1:(K)){
+par(mfrow = c(4,4), mar = c(4.2, 4.2, 2, 0.2))
+for(m in 1:(K + 1)){
   plot(Theta[,m], type = "l")
 }
 mtext(text = "Beta Trace Plots AR(1)", outer = TRUE, line = -1.5)
@@ -235,11 +241,12 @@ pdf(file = "tausquaredTrace_AR1_Multiple.pdf",
     width = 12,
     height = 6)
 par(mfrow = c(1,1))
-plot(Theta[,K+1], type = "l")
+plot(Theta[,K+2], type = "l")
 dev.off()
 
 mean(abs(sign(diff(Theta[,1]))))
 # 27% acceptance rate approximately
 
+# Check how many point-wise times the red line is outside the 95th credible interval
 
-
+mean(arma_spec(omega = omega, phi = phi) > summary_stats$upper | arma_spec(omega = omega, phi = phi) < summary_stats$lower)
