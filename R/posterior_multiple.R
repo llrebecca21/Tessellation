@@ -12,6 +12,6 @@
 #'
 #' @examples
 posterior_multiple <- function(b, X, sumX, tsq, y_bar, D, num_timeseries){
-  -num_timeseries/2 * (sum(b * b / D) / (num_timeseries * tsq) + crossprod(sumX, b) +
+  -num_timeseries/2 * (sum(b * b / D) / (num_timeseries) + crossprod(sumX, b) +
             sum(y_bar / exp(X %*% b)))
 }
