@@ -14,6 +14,6 @@
 #' @examples
 he_multiple <- function(b, X, sumX, tsq, y_bar, D, num_timeseries){
   he_bb = (num_timeseries / 2) * crossprod(X , X * c(y_bar / exp(X %*% b)))
-  diag(he_bb) =  1 / (tsq * D) + diag(he_bb)
+  diag(he_bb) =  1 / (D) + diag(he_bb)
   return(he_bb)
 }
