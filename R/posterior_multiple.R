@@ -1,4 +1,4 @@
-#' Beta Conditional Posterior for mulitple time series
+#' Beta^* Conditional Posterior for multiple time series
 #'
 #' @param b : beta
 #' @param X : basis function matrix
@@ -11,7 +11,7 @@
 #' @export
 #'
 #' @examples
-posterior_multiple <- function(b, X, sumX, tsq, y_bar, D, num_timeseries){
-  -num_timeseries/2 * (sum(b * b / D) / (num_timeseries) + crossprod(sumX, b) +
+posterior_multiple <- function(b, X, sumX, y_bar, D, B){
+  -B/2 * (sum(b * b / D) / (B) + crossprod(sumX, b) +
             sum(y_bar / exp(X %*% b)))
 }
