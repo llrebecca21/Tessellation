@@ -1,38 +1,41 @@
 # Multiple Single Stationary Time Series from the same underlying spectra
 library(mvtnorm)
 library(progress)
-set.seed(31)
+set.seed(22)
 source("R/posterior_multiple.R")
 source("R/gr_multiple.R")
 source("R/he_multiple.R")
 source("R/Chol_sampling.R")
 source("R/arma_spec.R")
 
-# Create single time series: AR(1)
-
+# Create a single time series
 # set hyper-parameters
-# length of time series
-n <-  35
+# length of a single time series
+n <-  1000
+# Frequency (\omega_j): defined on [0, 2\pi)
+# for j = 0,...,n-1
 omega <- (2 * pi * (0:(n-1)))/n
 # burn-in period for ARsim
 burn <- 50
 
-# Create coefficient phi
+# Pick an AR() process: AR(1), AR(2), AR(3)
+# Create coefficient \phi
 # For AR(1)
 phi <- 0.5
 
-# AR(2)
+# For AR(2)
 # phi <- c(1.4256, -0.9)
 
 # For AR(3)
 # phi <- c(1.4256, -0.7344, 0.1296)
 
-# Need to Create ~ 10 copies of the time series and store it in a matrix
+# Need to Create ~ B copies of the time series and store it in a matrix
 # Each column of the matrix contains a time series
-num_timeseries <- 10
-# create matrix to store the time series
-matrix_timeseries <- matrix(NA, nrow = n, ncol = num_timeseries)
-for(r in 1:num_timeseries){
+# B : the number of independent stationary time series (B) 
+B <- 500
+# create matrix to store the time series: (B x n)
+matrix_timeseries <- matrix(NA, nrow = n, ncol = B)
+for(r in 1:B){
   matrix_timeseries[,r] <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
 }
 
@@ -60,69 +63,60 @@ y_bar <- rowMeans(perio)
 #################
 
 # number of basis functions/number of beta values
-K <- 5
-# alphabeta stores number of beta values (beta_{1:K}) + intercept term (alpha_0)
-# alphabeta <- K + 1
-# prior intercept variance (variance associated with the alpha_0 prior)
-# sigmasalpha <- 100
-# Define omega for the Basis Functions
-omega <- (2 * pi * (0:(n-1)))/n
-# Define lambda for the half-t prior
+K <- 10
+# Define lambda for the half-t prior: \pi(\tau^2 | \lambda) and \pi(\lambda)
 lambda = 1
-# Define degrees of freedom for half-t prior
+# Define degrees of freedom for half-t prior: \pi(\tau^2 | \lambda)
 # Cauchy nu = 1
 nu = 3
-# Define eta as the other scale parameter for half-t prior
-# eta = 1 gives standard Cauchy; higher eta gives wider Cauchy
-eta = 1
-# Define D's main diagonal
-# D is a measure of prior variance
+# Define eta as the other scale parameter for half-t prior: \pi(\lambda)
+# etasq = 1 gives standard Cauchy; higher eta gives wider Cauchy
+etasq = 1
+
+# Define D's main diagonal : Choose either identity, Yakun's D, or exponential decay D
+# D is a measure of prior variance for \beta_1 through \beta_K
+
 # Identity D:
-D = rep(1, K)
-sigmasquare = 100
+# D = rep(1, K)
 
-# D = c((sqrt(2)*pi*(1:K))^(-2)) * 100
-#D = c(1, (sqrt(2)*pi*(1:(K-1)))^(-2))
+# Yakun's D
+D = c((sqrt(2)*pi*(1:K))^(-2))
 
+# exponential decay D
 # D = exp(0.12 * -(0:(K-1)))
 
+# prior variance for beta_0
+sigmasquare = 100
+
 # Set number of iterations
-iter <- 10000
+iter = 10000
 
 #######################
 # Initialize parameters
 #######################
 # set tau^2 value
 tausquared <- 50
+# The new D matrix that houses the prior variance of \beta^* 
 Sigma = c(sigmasquare, D * tausquared)
-# set intercept term
-# alpha0 <- 0
-# set beta
-# betavalues <- rnorm(K,mean = 0, sd = sqrt(tausquared))
-# Initialize beta at 0
-# betavalues <- rep(0,K)
 
-# Create matrix to store samples
-# ncol: number of parameters (Beta, tau^2)
+# Create matrix to store estimated samples row-wise for (\beta^*, \tau^2)
+# ncol: number of parameters (beta^*, tau^2)
+# dim : (iter) x (K + 2)
 Theta <- matrix(NA, nrow = iter, ncol = K + 2)
 
 # Create matrix of the basis functions
-# unscale by n (i.e. 2/n)
 # fix fourier frequencies
-X <- outer(X = omega, Y = 0:K, FUN = function(x,y){cos(y * x)})
-
+X <- outer(X = omega, Y = 0:K, FUN = function(x,y){sqrt(2) * cos(y * x)})
+# redefine the first column to be 1's
+X[,1] <- 1
 # Initialize beta using least squares solution
-betavalues <- c(crossprod(X,log(y_bar))) / c(n, rep(n/2, K))
+betavalues <- c(crossprod(X,log(y_bar))) / n
 
 # Check X is orthogonal basis
-dim(X)
-# Fix the scaling of the first column
-#X[,1] <- X[,1]/sqrt(2)
 round(crossprod(X),5)
 # Specify Sum of X for the posterior function later
-# 1^T_n X Beta part in the paper (excluding the Beta)
+# 1^T_n X part in the paper: identical to colSums but is a faster calculation
 sumX <- c(crossprod(rep(1, nrow(X)), X))
-length(sumX)
 # Initialize first row of Theta
 Theta[1,] <- c(betavalues, tausquared)
 
@@ -135,43 +129,51 @@ pb = progress_bar$new(total = iter - 1)
 for (g in 2:iter) {
   pb$tick()
   # g = 2
-  # Extract beta and tau^2 from theta
-  # beta:
+  # Extract \beta^* and tau^2 from theta
+  # beta^* of most recent iteration:
   b = Theta[g - 1, 1:(K+1)]
-  # tau^squared:
+  # tau^squared of most recent iteration:
   tsq = Theta[g - 1, K + 2]
+  ##########################
   # Metropolis Hastings Step
-  # Maximum A Posteriori (MAP) estimate : finds the alpha and beta that gives us the mode of the conditional posterior of beta and alpha_0 conditioned on y
+  ##########################
+  # Maximum A Posteriori (MAP) estimate : finds the \beta^* that gives us the mode of the conditional posterior of \beta^* conditioned on y
   map <- optim(par = b, fn = posterior_multiple, gr = gr_multiple, method ="BFGS", control = list(fnscale = -1),
-               X = X, sumX = sumX, tsq = tsq, y_bar = y_bar, D = Sigma, num_timeseries = num_timeseries)$par
+               X = X, sumX = sumX, y_bar = y_bar, D = Sigma, B = B)$par
   # Call the hessian function
-  norm_precision <- he_multiple(b = map, X = X, sumX = sumX, tsq = tsq, y_bar = y_bar, D = Sigma , num_timeseries = num_timeseries)
-  # Calculate the alpha beta proposals, using Cholesky Sampling
+  norm_precision <- he_multiple(b = map, X = X, sumX = sumX, y_bar = y_bar, D = Sigma , B = B)
+  # Calculate the \beta^* proposal, using Cholesky Sampling
   betaprop <- Chol_sampling(Lt = chol(norm_precision), d = K + 1, beta_c = map)
-
-  # calculate acceptance ratio
-  prop_ratio <- min(1, exp(posterior_multiple(b = betaprop, X = X, sumX = sumX, tsq = tsq, y_bar = y_bar,  D = Sigma, num_timeseries = num_timeseries) -
-                             posterior_multiple(b = b, X = X, sumX = sumX, tsq = tsq, y_bar = y_bar,  D = Sigma, num_timeseries = num_timeseries)))
-  # create acceptance decision
+  # Calculate acceptance ratio
+  prop_ratio <- min(1, exp(posterior_multiple(b = betaprop, X = X, sumX = sumX, y_bar = y_bar,  D = Sigma, B = B) -
+                             posterior_multiple(b = b, X = X, sumX = sumX, y_bar = y_bar,  D = Sigma, B = B)))
+  # Create acceptance decision
   accept <- runif(1)
   if(accept < prop_ratio){
-    # accept betaprop as new beta
+    # Accept betaprop as new beta^*
     Theta[g, -(K+2)] <- betaprop
   }else{
+    # Reject betaprop as new beta^*
     Theta[g, -(K+2)] <- b
   }
+  ##############################
   # Tau^2 Update: Gibbs Sampler: conditional conjugate prior for the half-t
-  # 1/gamma is the same as invgamma (so we dont need the other library)
-  lambda = 1/rgamma(1, (nu+1)/2, nu/tsq + eta^2)
+  ##############################
+  # 1/rgamma is the same as invgamma (so we don't need the other library)
+  lambda = 1/rgamma(1, (nu+1)/2, nu/tsq + etasq)
   newtsq = 1/rgamma(1, (K + 1 + nu)/2, sum(Theta[g, -(K+2)]^2 / D) / 2 + nu/lambda)
   # Update Theta matrix with new tau squared value
   Theta[g,K+2] <- newtsq
-  #Theta[g,K+2] <- 100
+  # Update Sigma with new tau^2 value
   Sigma = c(sigmasquare, D * newtsq)
 }
 #Rprof(NULL)
 # summaryRprof()
 
+
+#######################
+# Plots and Diagnostics
+#######################
 # Remove burn-in
 burnin <- 10
 Theta <- Theta[-(1:burnin),]
@@ -213,7 +215,7 @@ lines(x = omega, y = log(summary_stats$mean), col = "black")
 lines(x = omega, y = log(arma_spec(omega = omega, phi = phi)), col = "red", lwd = 2)
 #lines(x = omega, y = exp(perio), col = "lightgrey")
 legend("topright", col = c("black", "red"), lwd = c(1,2), legend = c("Posterior Mean", "True Spectral Density"))
-lines(y = log(y_bar), x = omega, col = "orange")
+#lines(y = log(y_bar), x = omega, col = "orange")
 dev.off()
 
 mean((arma_spec(omega = omega, phi = phi) - summary_stats$mean)^2)
@@ -245,8 +247,7 @@ plot(Theta[,K+2], type = "l")
 dev.off()
 
 mean(abs(sign(diff(Theta[,1]))))
-# 27% acceptance rate approximately
+# 25% for S = 500; n = 1000; K = 10 
 
 # Check how many point-wise times the red line is outside the 95th credible interval
-
 mean(arma_spec(omega = omega, phi = phi) > summary_stats$upper | arma_spec(omega = omega, phi = phi) < summary_stats$lower)
