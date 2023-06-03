@@ -205,9 +205,9 @@ summary_stats <- data.frame("lower" = apply(specdens, 1, FUN = function(x){quant
 pdf(file = "Posterior_Mean_Mulitple.pdf",
     width = 10,
     height = 5,)
-par(mfrow = c(1, 1))
+par(mfrow = c(1, 1), mar = c(4,4,4,1) + .1)
 plot(x =c(), y=c(), xlim = c(0,pi), ylim = range(log(specdens)), ylab = "Spectral Density", xlab = "omega",
-     main = "Posterior Mean and\n 95% Credible Interval")
+     main = sprintf("Posterior Mean and\n 95%s Credible Interval, K = %g, B = %g, n = %g", "%", K, B, n))
 polygon(x = c(omega,rev(omega)), y = log(c(summary_stats$lower, rev(summary_stats$upper))), col = "darkgrey", border = NA)
 #lines(x = omega, y = summary_stats$lower, lty = 2, col = "darkgrey")
 lines(x = omega, y = log(summary_stats$mean), col = "black")
@@ -247,7 +247,14 @@ plot(Theta[,K+2], type = "l")
 dev.off()
 
 mean(abs(sign(diff(Theta[,1]))))
-# 25% for S = 500; n = 1000; K = 10 
+# seed = 22
+# 25% for B = 500; n = 1000; K = 10 
+# 27% for B = 1  ; n = 1000; K = 10
+# 42% for B = 1  ; n = 1000; K = 5
 
-# Check how many point-wise times the red line is outside the 95th credible interval
+# Check how many point-wise times the red line (True Spectral Density) is outside the 95th credible interval
 mean(arma_spec(omega = omega, phi = phi) > summary_stats$upper | arma_spec(omega = omega, phi = phi) < summary_stats$lower)
+# seed = 22
+# 0.038 for B = 500; n = 1000; K = 10 
+# 0.161 for B = 1  ; n = 1000; K = 10
+# 0.187 for B = 1  ; n = 1000; K = 5
