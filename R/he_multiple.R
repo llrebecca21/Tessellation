@@ -12,8 +12,8 @@
 #' @export
 #'
 #' @examples
-he_multiple <- function(b, X, sumX, y_bar, D, B){
-  he_bb = (B / 2) * crossprod(X , X * c(y_bar / exp(X %*% b)))
+he_multiple <- function(b, Psi, y_bar, D, R){
+  he_bb = R * crossprod(Psi , Psi * c(y_bar / exp(Psi %*% b)))
   diag(he_bb) =  1 / (D) + diag(he_bb)
   return(he_bb)
 }
