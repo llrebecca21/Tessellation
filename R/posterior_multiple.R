@@ -11,7 +11,7 @@
 #' @export
 #'
 #' @examples
-posterior_multiple <- function(b, X, sumX, y_bar, D, B){
-  -B/2 * (sum(b * b / D) / (B) + crossprod(sumX, b) +
-            sum(y_bar / exp(X %*% b)))
+posterior_multiple <- function(b, Psi, sumPsi, y_bar, D, R){
+  -R * (sum(b * b / D) / (R * 2) + crossprod(sumPsi, b) +
+            sum(y_bar / exp(Psi %*% b)))
 }
