@@ -11,17 +11,20 @@ source("R/arma_spec.R")
 # Create a single time series
 # set hyper-parameters
 # length of a single time series
-n <-  1000
+n = 750
+# highest little j index value for the frequencies
+J = floor((n-1) / 2)
 # Frequency (\omega_j): defined on [0, 2\pi)
 # for j = 0,...,n-1
-omega <- (2 * pi * (0:(n-1)))/n
+# omega = (2 * pi * (0:(n-1)))/n
+omega = (2 * pi * (0:J)) / n
 # burn-in period for ARsim
-burn <- 50
+burn = 50
 
 # Pick an AR() process: AR(1), AR(2), AR(3)
 # Create coefficient \phi
 # For AR(1)
-phi <- 0.5
+phi = 0.5
 
 # For AR(2)
 # phi <- c(1.4256, -0.9)
@@ -29,41 +32,45 @@ phi <- 0.5
 # For AR(3)
 # phi <- c(1.4256, -0.7344, 0.1296)
 
-# Need to Create ~ B copies of the time series and store it in a matrix
+# Need to Create ~ R copies of the time series and store it in a matrix
 # Each column of the matrix contains a time series
-# B : the number of independent stationary time series (B) 
-B <- 500
-# create matrix to store the time series: (B x n)
-matrix_timeseries <- matrix(NA, nrow = n, ncol = B)
-for(r in 1:B){
+# R : the number of independent stationary time series (R) 
+R = 50
+# create matrix to store the time series: (R x n)
+matrix_timeseries = matrix(NA, nrow = n, ncol = R)
+for(r in 1:R){
   matrix_timeseries[,r] <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
 }
 
 
 # Plot the time series that will be used
-par(mfrow = c(5,2))
-for(i in 1:(ncol(matrix_timeseries))){
-  plot(x = matrix_timeseries[,i], type = "l")
-}
+# par(mfrow = c(5,2))
+# for(i in 1:(ncol(matrix_timeseries))){
+#   plot(x = matrix_timeseries[,i], type = "l")
+# }
 
 # Define Periodogram
 # Define y_n(\omega_j) for the posterior function below
-perio <- (abs(mvfft(matrix_timeseries)) ^ 2 / n)
+perio = (abs(mvfft(matrix_timeseries)) ^ 2 / n)
+dim(perio)
+# subset perio for unique values, J = ceil((n-1) / 2) 
+perio = perio[(0:J) + 1,]
+dim(perio)
 
-par(mfrow = c(5,2))
-for(i in 1:(ncol(perio))){
-  plot(omega, perio[,i], type = "l", xlim = c(0,pi))
-}
+# par(mfrow = c(5,2))
+# for(i in 1:(ncol(perio))){
+#   plot(omega, perio[,i], type = "l", xlim = c(0,pi))
+# }
 
 # Calculate ybar(omega_j)
-y_bar <- rowMeans(perio)
+y_bar = rowMeans(perio)
 
 #################
 # MCMC parameters
 #################
 
 # number of basis functions/number of beta values
-K <- 10
+B = 10
 # Define lambda for the half-t prior: \pi(\tau^2 | \lambda) and \pi(\lambda)
 lambda = 1
 # Define degrees of freedom for half-t prior: \pi(\tau^2 | \lambda)
@@ -77,13 +84,13 @@ etasq = 1
 # D is a measure of prior variance for \beta_1 through \beta_K
 
 # Identity D:
-# D = rep(1, K)
+# D = rep(1, B)
 
 # Yakun's D
-D = c((sqrt(2)*pi*(1:K))^(-2))
+D = c((sqrt(2)*pi*(1:B))^(-2))
 
 # exponential decay D
-# D = exp(0.12 * -(0:(K-1)))
+# D = exp(0.12 * -(0:(B-1)))
 
 # prior variance for beta_0
 sigmasquare = 100
@@ -95,30 +102,38 @@ iter = 10000
 # Initialize parameters
 #######################
 # set tau^2 value
-tausquared <- 50
+tausquared = 50
 # The new D matrix that houses the prior variance of \beta^* 
 Sigma = c(sigmasquare, D * tausquared)
 
 # Create matrix to store estimated samples row-wise for (\beta^*, \tau^2)
 # ncol: number of parameters (beta^*, tau^2)
-# dim : (iter) x (K + 2)
-Theta <- matrix(NA, nrow = iter, ncol = K + 2)
+# dim : (iter) x (B + 2)
+Theta = matrix(NA, nrow = iter, ncol = B + 2)
 
 # Create matrix of the basis functions
 # fix fourier frequencies
-X <- outer(X = omega, Y = 0:K, FUN = function(x,y){sqrt(2) * cos(y * x)})
+Psi = outer(X = omega, Y = 0:B, FUN = function(x,y){sqrt(2)* cos(y * x)})
 # redefine the first column to be 1's
-X[,1] <- 1
-# Initialize beta using least squares solution
-betavalues <- c(crossprod(X,log(y_bar))) / n
-
+Psi[,1] = 1
+dim(Psi)
 # Check X is orthogonal basis
-round(crossprod(X),5)
+round(crossprod(Psi),5)
+# not orthogonal because we are not evaluating the periodogram at the full n-1 values.
+# Initialize beta using least squares solution
+# Using the full data n-1 for periodogram can use this to initialize beta:
+#betavalues = c(crossprod(Psi,log(y_bar))) / n
+
+# Using J amount of data for periodogram, can initialize beta this way:
+betavalues = solve(crossprod(Psi), crossprod(Psi, log(y_bar)))
+
+
+# Specify Sum of X for the posterior function later
 # Specify Sum of X for the posterior function later
 # 1^T_n X part in the paper: identical to colSums but is a faster calculation
-sumX <- c(crossprod(rep(1, nrow(X)), X))
+sumPsi = c(crossprod(rep(1, nrow(Psi)), Psi))
 # Initialize first row of Theta
-Theta[1,] <- c(betavalues, tausquared)
+Theta[1,] = c(betavalues, tausquared)
 
 #####################
 # MCMC Algorithm
@@ -131,43 +146,43 @@ for (g in 2:iter) {
   # g = 2
   # Extract \beta^* and tau^2 from theta
   # beta^* of most recent iteration:
-  b = Theta[g - 1, 1:(K+1)]
+  b = Theta[g - 1, 1:(B+1)]
   # tau^squared of most recent iteration:
-  tsq = Theta[g - 1, K + 2]
+  tsq = Theta[g - 1, B + 2]
   ##########################
   # Metropolis Hastings Step
   ##########################
   # Maximum A Posteriori (MAP) estimate : finds the \beta^* that gives us the mode of the conditional posterior of \beta^* conditioned on y
   map <- optim(par = b, fn = posterior_multiple, gr = gr_multiple, method ="BFGS", control = list(fnscale = -1),
-               X = X, sumX = sumX, y_bar = y_bar, D = Sigma, B = B)$par
+               Psi = Psi, sumPsi = sumPsi, y_bar = y_bar, D = Sigma, R = R)$par
   # Call the hessian function
-  norm_precision <- he_multiple(b = map, X = X, sumX = sumX, y_bar = y_bar, D = Sigma , B = B)
+  norm_precision <- he_multiple(b = map, Psi = Psi, y_bar = y_bar, D = Sigma , R = R)
   # Calculate the \beta^* proposal, using Cholesky Sampling
-  betaprop <- Chol_sampling(Lt = chol(norm_precision), d = K + 1, beta_c = map)
+  betaprop <- Chol_sampling(Lt = chol(norm_precision), d = B + 1, beta_c = map)
   # Calculate acceptance ratio
-  prop_ratio <- min(1, exp(posterior_multiple(b = betaprop, X = X, sumX = sumX, y_bar = y_bar,  D = Sigma, B = B) -
-                             posterior_multiple(b = b, X = X, sumX = sumX, y_bar = y_bar,  D = Sigma, B = B)))
+  prop_ratio <- min(1, exp(posterior_multiple(b = betaprop, Psi = Psi, sumPsi = sumPsi, y_bar = y_bar,  D = Sigma, R = R) -
+                             posterior_multiple(b = b, Psi = Psi, sumPsi = sumPsi, y_bar = y_bar,  D = Sigma, R = R)))
   # Create acceptance decision
   accept <- runif(1)
   if(accept < prop_ratio){
     # Accept betaprop as new beta^*
-    Theta[g, -(K+2)] <- betaprop
+    Theta[g, -(B+2)] <- betaprop
   }else{
     # Reject betaprop as new beta^*
-    Theta[g, -(K+2)] <- b
+    Theta[g, -(B+2)] <- b
   }
   ##############################
   # Tau^2 Update: Gibbs Sampler: conditional conjugate prior for the half-t
   ##############################
   # 1/rgamma is the same as invgamma (so we don't need the other library)
   lambda = 1/rgamma(1, (nu+1)/2, nu/tsq + etasq)
-  newtsq = 1/rgamma(1, (K + 1 + nu)/2, sum(Theta[g, -(K+2)]^2 / D) / 2 + nu/lambda)
+  newtsq = 1/rgamma(1, (B + 1 + nu)/2, sum(Theta[g, -c(1,B+2)]^2 / D) / 2 + nu/lambda)
   # Update Theta matrix with new tau squared value
-  Theta[g,K+2] <- newtsq
+  Theta[g,B+2] = newtsq
   # Update Sigma with new tau^2 value
   Sigma = c(sigmasquare, D * newtsq)
 }
-#Rprof(NULL)
+# Rprof(NULL)
 # summaryRprof()
 
 
@@ -182,7 +197,7 @@ Theta <- Theta[-(1:burnin),]
 #pdf(file = "Spectral_Density_Estimates.pdf",
 #    width = 10,
 #    height = 5,)
-specdens <- exp(X %*% t(Theta[ ,-(K+2)]))
+specdens = exp(Psi %*% t(Theta[ ,-(B+2)]))
 par(mfrow = c(1, 1))
 plot(x =c(), y=c(), xlim = c(0,3), ylim = range(log(specdens)), ylab = "Spectral Density", xlab = "omega",
      main = "Spectral Density Estimates \nwith True Spectral Density")
@@ -207,7 +222,7 @@ pdf(file = "Posterior_Mean_Mulitple.pdf",
     height = 5,)
 par(mfrow = c(1, 1), mar = c(4,4,4,1) + .1)
 plot(x =c(), y=c(), xlim = c(0,pi), ylim = range(log(specdens)), ylab = "Spectral Density", xlab = "omega",
-     main = sprintf("Posterior Mean and\n 95%s Credible Interval, K = %g, B = %g, n = %g", "%", K, B, n))
+     main = sprintf("Posterior Mean and\n 95%s Credible Interval, B = %g, R = %g, n = %g", "%", B, R, n))
 polygon(x = c(omega,rev(omega)), y = log(c(summary_stats$lower, rev(summary_stats$upper))), col = "darkgrey", border = NA)
 #lines(x = omega, y = summary_stats$lower, lty = 2, col = "darkgrey")
 lines(x = omega, y = log(summary_stats$mean), col = "black")
@@ -232,7 +247,7 @@ pdf(file = "BetaTrace_AR1_Multiple.pdf",
     width = 12,
     height = 6)
 par(mfrow = c(4,4), mar = c(4.2, 4.2, 2, 0.2))
-for(m in 1:(K + 1)){
+for(m in 1:(B + 1)){
   plot(Theta[,m], type = "l")
 }
 mtext(text = "Beta Trace Plots AR(1)", outer = TRUE, line = -1.5)
@@ -243,18 +258,26 @@ pdf(file = "tausquaredTrace_AR1_Multiple.pdf",
     width = 12,
     height = 6)
 par(mfrow = c(1,1))
-plot(Theta[,K+2], type = "l")
+plot(Theta[,B+2], type = "l")
 dev.off()
 
 mean(abs(sign(diff(Theta[,1]))))
 # seed = 22
-# 25% for B = 500; n = 1000; K = 10 
-# 27% for B = 1  ; n = 1000; K = 10
-# 42% for B = 1  ; n = 1000; K = 5
+# 25% for B = 500 ; n = 1000; K = 10 
+# 26% for B = 1000; n = 1000; K = 10
+# 27% for B = 1   ; n = 1000; K = 10
+# 42% for B = 1   ; n = 1000; K = 5
 
 # Check how many point-wise times the red line (True Spectral Density) is outside the 95th credible interval
 mean(arma_spec(omega = omega, phi = phi) > summary_stats$upper | arma_spec(omega = omega, phi = phi) < summary_stats$lower)
 # seed = 22
-# 0.038 for B = 500; n = 1000; K = 10 
-# 0.161 for B = 1  ; n = 1000; K = 10
-# 0.187 for B = 1  ; n = 1000; K = 5
+# 0.038 for B = 500 ; n = 1000; K = 10 
+# 0.162 for B = 1000; n = 1000; K = 10
+# 0.161 for B = 1   ; n = 1000; K = 10
+# 0.187 for B = 1   ; n = 1000; K = 5
+
+# package functionalboxplots
+# pick a few different frequencies and then look at the coverage for 95%
+
+# Thought Experiment
+# Do simulations for longer time series vs. smaller but more replicates. 
