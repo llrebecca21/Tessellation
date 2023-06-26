@@ -1,17 +1,23 @@
 # Multiple Single Stationary Time Series from the same underlying spectra
 library(mvtnorm)
 library(progress)
-set.seed(22)
+library(fda)
+library(bayesplot)
+library(ggplot2)
+set.seed(31)
 source("R/posterior_multiple.R")
 source("R/gr_multiple.R")
 source("R/he_multiple.R")
 source("R/Chol_sampling.R")
 source("R/arma_spec.R")
 
+# 31 : perfect at edges use for example that this is a seed thing
+
+
 # Create a single time series
 # set hyper-parameters
 # length of a single time series
-n = 750
+n = 1000
 # highest little j index value for the frequencies
 J = floor((n-1) / 2)
 # Frequency (\omega_j): defined on [0, 2\pi)
@@ -24,18 +30,18 @@ burn = 50
 # Pick an AR() process: AR(1), AR(2), AR(3)
 # Create coefficient \phi
 # For AR(1)
-phi = 0.5
+phi = 0.25
 
 # For AR(2)
-# phi <- c(1.4256, -0.9)
+#phi <- c(1.4256, -0.9)
 
 # For AR(3)
-# phi <- c(1.4256, -0.7344, 0.1296)
+#phi <- c(1.4256, -0.7344, 0.1296)
 
 # Need to Create ~ R copies of the time series and store it in a matrix
 # Each column of the matrix contains a time series
 # R : the number of independent stationary time series (R) 
-R = 50
+R = 100
 # create matrix to store the time series: (R x n)
 matrix_timeseries = matrix(NA, nrow = n, ncol = R)
 for(r in 1:R){
@@ -54,7 +60,7 @@ for(r in 1:R){
 perio = (abs(mvfft(matrix_timeseries)) ^ 2 / n)
 dim(perio)
 # subset perio for unique values, J = ceil((n-1) / 2) 
-perio = perio[(0:J) + 1,]
+perio = perio[(0:J) + 1, , drop=FALSE]
 dim(perio)
 
 # par(mfrow = c(5,2))
@@ -86,8 +92,8 @@ etasq = 1
 # Identity D:
 # D = rep(1, B)
 
-# Yakun's D
-D = c((sqrt(2)*pi*(1:B))^(-2))
+# Rebecca's D
+D = 1 / (4 * pi * (1:B)^2)
 
 # exponential decay D
 # D = exp(0.12 * -(0:(B-1)))
@@ -217,9 +223,9 @@ summary_stats <- data.frame("lower" = apply(specdens, 1, FUN = function(x){quant
 
 
 # Plot with the bounds:
-pdf(file = "Posterior_Mean_Mulitple.pdf",
-    width = 10,
-    height = 5,)
+# pdf(file = "Posterior_Mean_Mulitple.pdf",
+#     width = 10,
+#     height = 5,)
 par(mfrow = c(1, 1), mar = c(4,4,4,1) + .1)
 plot(x =c(), y=c(), xlim = c(0,pi), ylim = range(log(specdens)), ylab = "Spectral Density", xlab = "omega",
      main = sprintf("Posterior Mean and\n 95%s Credible Interval, B = %g, R = %g, n = %g", "%", B, R, n))
@@ -231,7 +237,7 @@ lines(x = omega, y = log(arma_spec(omega = omega, phi = phi)), col = "red", lwd 
 #lines(x = omega, y = exp(perio), col = "lightgrey")
 legend("topright", col = c("black", "red"), lwd = c(1,2), legend = c("Posterior Mean", "True Spectral Density"))
 #lines(y = log(y_bar), x = omega, col = "orange")
-dev.off()
+#dev.off()
 
 mean((arma_spec(omega = omega, phi = phi) - summary_stats$mean)^2)
 # for n = 1000
@@ -243,23 +249,23 @@ mean((arma_spec(omega = omega, phi = phi) - summary_stats$mean)^2)
 ##############
 
 # Beta Trace Plots
-pdf(file = "BetaTrace_AR1_Multiple.pdf",
-    width = 12,
-    height = 6)
+#pdf(file = "BetaTrace_AR1_Multiple.pdf",
+#    width = 12,
+#    height = 6)
 par(mfrow = c(4,4), mar = c(4.2, 4.2, 2, 0.2))
 for(m in 1:(B + 1)){
   plot(Theta[,m], type = "l")
 }
 mtext(text = "Beta Trace Plots AR(1)", outer = TRUE, line = -1.5)
-dev.off()
+#dev.off()
 
 # plot tau^2 estimate
-pdf(file = "tausquaredTrace_AR1_Multiple.pdf",
-    width = 12,
-    height = 6)
+#pdf(file = "tausquaredTrace_AR1_Multiple.pdf",
+#    width = 12,
+#    height = 6)
 par(mfrow = c(1,1))
 plot(Theta[,B+2], type = "l")
-dev.off()
+#dev.off()
 
 mean(abs(sign(diff(Theta[,1]))))
 # seed = 22
@@ -276,8 +282,26 @@ mean(arma_spec(omega = omega, phi = phi) > summary_stats$upper | arma_spec(omega
 # 0.161 for B = 1   ; n = 1000; K = 10
 # 0.187 for B = 1   ; n = 1000; K = 5
 
-# package functionalboxplots
-# pick a few different frequencies and then look at the coverage for 95%
 
-# Thought Experiment
-# Do simulations for longer time series vs. smaller but more replicates. 
+#######################################
+# Diagnostic Plots
+#######################################
+
+# Functional Boxplots
+dim(specdens)
+# Create a functional boxplot for the estimated log of the spectral density
+fbplot(fit = log(specdens), x = omega, xlim = range(omega), ylim = range(log(specdens)), prob = c(0.95, 0.5, .05),
+       xlab = "omega",
+       factor = 1.5,
+       col = c("pink", "cyan", "orange"))
+#lines(x = omega, y = log(summary_stats$lower), col = "cyan2")
+
+
+# Create Trace Plots using mcmc package
+colnames(Theta) = c(paste("b", seq(0,B), sep = ""), "tausq")
+# tau^2 trace plot
+mcmc_trace(Theta[,B+2, drop = FALSE])
+mcmc_trace(Theta[,-c(B+2), drop = FALSE])
+
+
+
