@@ -4,12 +4,13 @@
 #' @param iter : (integer) number of iterations the mcmc algorithm completes
 #' @param R : (integer) number of time series from same underlying spectrum
 #' @param B : (integer) number of basis functions
+#' @param phi : (vector or value between 0 and 1) coefficient value(s) of the AR process used to create data
 #'
 #' @return
 #' @export
 #'
 #' @examples
-mcmc_stationary <- function(n, iter, R = 1, B = 10 ){
+mcmc_stationary <- function(n, iter, phi ,R = 1, B = 10 ){
   
   # Create a single time series
   # set hyper-parameters
