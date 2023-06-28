@@ -1,3 +1,14 @@
+#' Function that rungs the mcmc sampling algorithm for a single or multiple stationary time series
+#'
+#' @param n : (integer) length of an individual time series
+#' @param iter : (integer) number of iterations the mcmc algorithm completes
+#' @param R : (integer) number of time series from same underlying spectrum
+#' @param B : (integer) number of basis functions
+#'
+#' @return
+#' @export
+#'
+#' @examples
 mcmc_stationary <- function(n, iter, R = 1, B = 10 ){
   
   # Create a single time series
