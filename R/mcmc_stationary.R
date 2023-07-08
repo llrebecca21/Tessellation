@@ -23,17 +23,6 @@ mcmc_stationary <- function(n, iter, phi ,R = 1, B = 10 ){
   # burn-in period for ARsim
   burn = 50
   
-  # Pick an AR() process: AR(1), AR(2), AR(3)
-  # Create coefficient \phi
-  # For AR(1)
-  phi = 0.5
-  
-  # For AR(2)
-  #phi <- c(1.4256, -0.9)
-  
-  # For AR(3)
-  #phi <- c(1.4256, -0.7344, 0.1296)
-  
   # Need to Create ~ R copies of the time series and store it in a matrix
   # Each column of the matrix contains a time series
   # create matrix to store the time series: (R x n)
@@ -41,27 +30,14 @@ mcmc_stationary <- function(n, iter, phi ,R = 1, B = 10 ){
   for(r in 1:R){
     matrix_timeseries[,r] <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
   }
-  
-  
-  # Plot the time series that will be used
-  # par(mfrow = c(5,2))
-  # for(i in 1:(ncol(matrix_timeseries))){
-  #   plot(x = matrix_timeseries[,i], type = "l")
-  # }
-  
+
   # Define Periodogram
   # Define y_n(\omega_j) for the posterior function below
   perio = (abs(mvfft(matrix_timeseries)) ^ 2 / n)
-  dim(perio)
+
   # subset perio for unique values, J = ceil((n-1) / 2) 
   perio = perio[(0:J) + 1, , drop=FALSE]
-  dim(perio)
-  
-  # par(mfrow = c(5,2))
-  # for(i in 1:(ncol(perio))){
-  #   plot(omega, perio[,i], type = "l", xlim = c(0,pi))
-  # }
-  
+
   # Calculate ybar(omega_j)
   y_bar = rowMeans(perio)
   
@@ -78,7 +54,7 @@ mcmc_stationary <- function(n, iter, phi ,R = 1, B = 10 ){
   # etasq = 1 gives standard Cauchy; higher eta gives wider Cauchy
   etasq = 1
   
-  # Define D's main diagonal : Choose either identity, Yakun's D, or exponential decay D
+  # Define D's main diagonal : Choose either identity or Rebecca's D (variation of Yakun's D)
   # D is a measure of prior variance for \beta_1 through \beta_K
   
   # Identity D:
@@ -97,7 +73,7 @@ mcmc_stationary <- function(n, iter, phi ,R = 1, B = 10 ){
   # Initialize parameters
   #######################
   # set tau^2 value
-  tausquared = 50
+  tausquared = 1
   # The new D matrix that houses the prior variance of \beta^* 
   Sigma = c(sigmasquare, D * tausquared)
   
@@ -184,6 +160,15 @@ mcmc_stationary <- function(n, iter, phi ,R = 1, B = 10 ){
   # Remove burn-in
   burnin <- 10
   Theta <- Theta[-(1:burnin),]
-  return(Theta)
+  return(list("Theta" = Theta, "av_perio" = y_bar))
   
+  
+  
+
 }
+
+
+
+
+
+
