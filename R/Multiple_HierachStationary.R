@@ -73,10 +73,53 @@ deg = B+1
 # initial V
 V = diag(B+1)
 
+# Calculate ybar(omega_j)
+y_bar = rowMeans(perio)
+
 
 # \Lambda will be a random piece later
 # Define \Lambda for variance of beta^r's
 # Lambda = 
+
+#######################
+# Initialize parameters
+#######################
+# set tau^2 value
+tausquared = 50
+# The new D matrix that houses the prior variance of \beta^* 
+Sigma = c(sigmasquare, D * tausquared)
+
+# Create matrix to store estimated samples row-wise for (\beta^*, \tau^2)
+# ncol: number of parameters (beta^*, tau^2)
+# dim : (iter) x (B + 2)
+Theta = matrix(NA, nrow = iter, ncol = B + 2)
+
+# Create matrix of the basis functions
+# fix fourier frequencies
+Psi = outer(X = omega, Y = 0:B, FUN = function(x,y){sqrt(2)* cos(y * x)})
+# redefine the first column to be 1's
+Psi[,1] = 1
+dim(Psi)
+# Check X is orthogonal basis
+round(crossprod(Psi),5)
+# not orthogonal because we are not evaluating the periodogram at the full n-1 values.
+# Initialize beta using least squares solution
+# Using J amount of data for periodogram, can initialize beta this way:
+betavalues = solve(crossprod(Psi), crossprod(Psi, log(y_bar)))
+
+# Initialize bb_beta at the mean for the prior of bb_beta
+bb_beta = tcrossprod(betavalues, rep(1,R))
+
+# Initialize Lambda
+Lambda = deg * V
+
+# Specify Sum of X for the posterior function later
+# Specify Sum of X for the posterior function later
+# 1^T_n X part in the paper: identical to colSums but is a faster calculation
+sumPsi = c(crossprod(rep(1, nrow(Psi)), Psi))
+# Initialize first row of Theta
+Theta[1,] = c(betavalues, tausquared)
+
 
 
 
