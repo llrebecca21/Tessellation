@@ -122,6 +122,13 @@ Theta[1,] = c(betavalues, tausquared)
 
 # Create Array to store values of bb_beta
 bb_beta_array = array(data = NA, dim = c(iter,nrow(bb_beta),ncol(bb_beta)))
+# initialize first array with bb_beta value
+bb_beta_array[1,,] = bb_beta
+
+# Create array to hold Lambda values
+Lambda_array = array(data = NA, dim = c(iter, nrow(Lambda), ncol(Lambda)))
+# Initalize first array with Lambda value
+Lambda_array[1,,] = Lambda
 
 #####################
 # MCMC Algorithm
