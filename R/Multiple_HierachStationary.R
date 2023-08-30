@@ -31,7 +31,15 @@ for(r in 1:R){
 dim(matrix_timeseries)
 # plot(matrix_timeseries[,1], type = "l")
 
-
+# Define Periodogram
+# Define y_n(\omega_j) for the posterior function below
+perio = (abs(mvfft(matrix_timeseries)) ^ 2 / n)
+dim(perio)
+# subset perio for unique values, J = ceil((n-1) / 2) 
+perio = perio[(0:J) + 1, , drop=FALSE]
+dim(perio)
+par(mfrow = c(1,1))
+plot(perio[,1], type = "l")
 
 
 
