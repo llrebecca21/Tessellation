@@ -1,7 +1,7 @@
 # Multiple Stationary Time Series simulated from perturbations with the same mean from a single time series
 
 # Create time series 
-# set hyper-parameters
+# set parameters for generating data
 # length of a single time series
 n = 1000
 # highest little j index value for the frequencies
@@ -40,6 +40,43 @@ perio = perio[(0:J) + 1, , drop=FALSE]
 dim(perio)
 par(mfrow = c(1,1))
 plot(perio[,1], type = "l")
+
+#################
+# MCMC parameters
+#################
+
+# number of basis functions/number of beta values
+B = 10
+# Define lambda for the half-t prior: \pi(\tau^2 | \lambda) and \pi(\lambda)
+lambda = 1
+# Define degrees of freedom for half-t prior: \pi(\tau^2 | \lambda)
+# Cauchy nu = 1
+nu = 3
+# Define eta as the other scale parameter for half-t prior: \pi(\lambda)
+# etasq = 1 gives standard Cauchy; higher eta gives wider Cauchy
+etasq = 1
+
+# Define D's main diagonal : 
+# D is a measure of prior variance for \beta_1 through \beta_K
+# Rebecca's D
+D = 1 / (4 * pi * (1:B)^2)
+
+# prior variance for beta_0
+sigmasquare = 100
+
+# Set number of iterations
+iter = 1000
+
+# prior for Lambda : Wishart
+# degrees of freedom
+deg = B+1
+# initial V
+V = diag(B+1)
+
+
+# \Lambda will be a random piece later
+# Define \Lambda for variance of beta^r's
+# Lambda = 
 
 
 
