@@ -120,6 +120,59 @@ sumPsi = c(crossprod(rep(1, nrow(Psi)), Psi))
 # Initialize first row of Theta
 Theta[1,] = c(betavalues, tausquared)
 
+# Create Array to store values of bb_beta
+bb_beta_array = array(data = NA, dim = c(iter,nrow(bb_beta),ncol(bb_beta)))
+
+#####################
+# MCMC Algorithm
+#####################
+
+#Rprof()
+pb = progress_bar$new(total = iter - 1)
+for (g in 2:iter) {
+  pb$tick()
+  # g = 2
+  # Extract \beta^* and tau^2 from theta
+  # beta^* of most recent iteration:
+  b = Theta[g - 1, 1:(B+1)]
+  # tau^squared of most recent iteration:
+  tsq = Theta[g - 1, B + 2]
+  ##########################
+  # Metropolis Hastings Step
+  ##########################
+  # Maximum A Posteriori (MAP) estimate : finds the \beta^* that gives us the mode of the conditional posterior of \beta^* conditioned on y
+  map <- optim(par = b, fn = posterior_multiple, gr = gr_multiple, method ="BFGS", control = list(fnscale = -1),
+               Psi = Psi, sumPsi = sumPsi, y_bar = y_bar, D = Sigma, R = R)$par
+  # Call the hessian function
+  norm_precision <- he_multiple(b = map, Psi = Psi, y_bar = y_bar, D = Sigma , R = R)
+  # Calculate the \beta^* proposal, using Cholesky Sampling
+  betaprop <- Chol_sampling(Lt = chol(norm_precision), d = B + 1, beta_c = map)
+  # Calculate acceptance ratio
+  prop_ratio <- min(1, exp(posterior_multiple(b = betaprop, Psi = Psi, sumPsi = sumPsi, y_bar = y_bar,  D = Sigma, R = R) -
+                             posterior_multiple(b = b, Psi = Psi, sumPsi = sumPsi, y_bar = y_bar,  D = Sigma, R = R)))
+  # Create acceptance decision
+  accept <- runif(1)
+  if(accept < prop_ratio){
+    # Accept betaprop as new beta^*
+    Theta[g, -(B+2)] <- betaprop
+  }else{
+    # Reject betaprop as new beta^*
+    Theta[g, -(B+2)] <- b
+  }
+  ##############################
+  # Tau^2 Update: Gibbs Sampler: conditional conjugate prior for the half-t
+  ##############################
+  # 1/rgamma is the same as invgamma (so we don't need the other library)
+  lambda = 1/rgamma(1, (nu+1)/2, nu/tsq + etasq)
+  newtsq = 1/rgamma(1, (B + 1 + nu)/2, sum(Theta[g, -c(1,B+2)]^2 / D) / 2 + nu/lambda)
+  # Update Theta matrix with new tau squared value
+  Theta[g,B+2] = newtsq
+  # Update Sigma with new tau^2 value
+  Sigma = c(sigmasquare, D * newtsq)
+}
+# Rprof(NULL)
+# summaryRprof()
+
 
 
 
