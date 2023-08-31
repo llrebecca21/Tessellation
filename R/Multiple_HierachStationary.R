@@ -1,5 +1,9 @@
 # Multiple Stationary Time Series simulated from perturbations with the same mean from a single time series
-
+library(mvtnorm)
+library(progress)
+library(fda)
+library(bayesplot)
+library(ggplot2)
 # Create time series 
 # set parameters for generating data
 # length of a single time series
@@ -107,8 +111,8 @@ betavalues = solve(crossprod(Psi), crossprod(Psi, log(y_bar)))
 # Initialize bb_beta at the mean for the prior of bb_beta
 bb_beta = tcrossprod(betavalues, rep(1,R))
 
-# Initialize Lambda
-Lambda = deg * V
+# Initialize Lambda^{-1}
+Lambda_inv = deg * V
 
 # Specify Sum of X for the posterior function later
 # Specify Sum of X for the posterior function later
@@ -123,9 +127,9 @@ bb_beta_array = array(data = NA, dim = c(iter,nrow(bb_beta),ncol(bb_beta)))
 bb_beta_array[1,,] = bb_beta
 
 # Create array to hold Lambda values
-Lambda_array = array(data = NA, dim = c(iter, nrow(Lambda), ncol(Lambda)))
+Lambda_array = array(data = NA, dim = c(iter, nrow(Lambda_inv), ncol(Lambda_inv)))
 # Initalize first array with Lambda value
-Lambda_array[1,,] = Lambda
+Lambda_array[1,,] = Lambda_inv
 
 #####################
 # MCMC Algorithm
@@ -135,10 +139,10 @@ Lambda_array[1,,] = Lambda
 pb = progress_bar$new(total = iter - 1)
 for (g in 2:iter) {
   pb$tick()
-  # g = 2
-  ##########################
-  # Metropolis Hastings Step
-  ##########################
+  g = 2
+  #########################
+  # tau^2 and lambda update
+  #########################
   # Update \lambda and \tau with Gibbs Sampler
   lambda = 1/rgamma(1, (nu+1)/2, nu/tausquared + etasq)
   tausquared = 1/rgamma(1, (B + 1 + nu)/2, sum(betavalues[-1]^2 / D) / 2 + nu/lambda)
@@ -146,12 +150,29 @@ for (g in 2:iter) {
   Theta[g,B+2] = tausquared
   # Update Sigma with new tau^2 value
   Sigma = c(sigmasquare, D * tausquared)
-
   
+  #####################
+  # beta update
+  #####################
   # Update \beta with Gibbs Sampler
+  Lambda_solve = solve(diag(Sigma))
+  betavalues = c(rmvnorm(n = 1, mean = solve(Lambda_solve + R * Lambda_inv) %*% Lambda_inv %*% bb_beta %*% rep(1,R),
+                       sigma = solve(Lambda_solve + R * Lambda_inv)))
+  #save new betavalue
+  Theta[g, -(B+2)] = betavalues
   
+  #####################
+  # Lambda^{-1} update
+  #####################
   # Update \Lambda^{-1} with Gibbs Sampler
+  # obtain new Lambda_inv with Wishart distribution
+  Lambda_inv = rWishart(n = 1, df = deg + R, Sigma = solve(tcrossprod(bb_beta - tcrossprod(betavalues, rep(1,R))) + diag(B+1)))[,,1]
+  # save Lambda_inv 
+  Lambda_array[g,,] = Lambda_inv
   
+  ######################
+  # bb_beta update :MH
+  ######################
   # Update \mathbb{B} with Metropolis Hastings Sampler
   
   
