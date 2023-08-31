@@ -77,9 +77,6 @@ V = diag(B+1)
 y_bar = rowMeans(perio)
 
 
-# \Lambda will be a random piece later
-# Define \Lambda for variance of beta^r's
-# Lambda = 
 
 #######################
 # Initialize parameters
@@ -139,15 +136,46 @@ pb = progress_bar$new(total = iter - 1)
 for (g in 2:iter) {
   pb$tick()
   # g = 2
-  # Extract \beta^* and tau^2 from theta
-  # beta^* of most recent iteration:
-  b = Theta[g - 1, 1:(B+1)]
-  # tau^squared of most recent iteration:
-  tsq = Theta[g - 1, B + 2]
   ##########################
   # Metropolis Hastings Step
   ##########################
-  # Maximum A Posteriori (MAP) estimate : finds the \beta^* that gives us the mode of the conditional posterior of \beta^* conditioned on y
+  # Update \lambda and \tau with Gibbs Sampler
+  lambda = 1/rgamma(1, (nu+1)/2, nu/tausquared + etasq)
+  tausquared = 1/rgamma(1, (B + 1 + nu)/2, sum(betavalues[-1]^2 / D) / 2 + nu/lambda)
+  # Update Theta matrix with new tau squared value
+  Theta[g,B+2] = tausquared
+  # Update Sigma with new tau^2 value
+  Sigma = c(sigmasquare, D * tausquared)
+
+  
+  # Update \beta with Gibbs Sampler
+  
+  # Update \Lambda^{-1} with Gibbs Sampler
+  
+  # Update \mathbb{B} with Metropolis Hastings Sampler
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  # Maximum A Posteriori (MAP) estimate : finds the \beta that gives us the mode of the conditional posterior of \beta conditioned on y
   map <- optim(par = b, fn = posterior_multiple, gr = gr_multiple, method ="BFGS", control = list(fnscale = -1),
                Psi = Psi, sumPsi = sumPsi, y_bar = y_bar, D = Sigma, R = R)$par
   # Call the hessian function
