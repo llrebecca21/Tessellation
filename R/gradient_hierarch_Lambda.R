@@ -11,5 +11,5 @@
 #'
 #' @examples
 gradient_hierarch_Lambda = function(br, b, sumPsi, Psi, y){
-  -lambda %*% (br - b) - sumPsi + colSums(Psi * y / exp(Psi %*% br))
+  -lambda %*% (br - b) - sumPsi + colSums(Psi * c(y / exp(Psi %*% br)))
 }
