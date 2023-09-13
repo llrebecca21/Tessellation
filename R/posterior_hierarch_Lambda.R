@@ -11,6 +11,6 @@
 #'
 #' @examples
 posterior_hierarch_Lambda <- function(br, b, Psi, sumPsi, y){
-  -(1/2) * crossprod(br - b, lambda %*% (br - b))  - (sumPsi %*% br) -
+  -(1/2) * crossprod(br - b, lambda %*% (br - b))  - crossprod(sumPsi, br) -
     sum(y / exp(Psi %*% br))
 }
