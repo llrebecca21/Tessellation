@@ -117,7 +117,7 @@ Lambda_inv = deg * V
 # Specify Sum of X for the posterior function later
 # Specify Sum of X for the posterior function later
 # 1^T_n X part in the paper: identical to colSums but is a faster calculation
-sumPsi = c(crossprod(rep(1, nrow(Psi)), Psi))
+sumPsi = crossprod(Psi, rep(1,J+1)) 
 # Initialize first row of Theta
 Theta[1,] = c(betavalues, tausquared)
 
@@ -174,47 +174,51 @@ for (g in 2:iter) {
   # bb_beta update :MH
   ######################
   # Update \mathbb{B} with Metropolis Hastings Sampler
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  # Maximum A Posteriori (MAP) estimate : finds the \beta that gives us the mode of the conditional posterior of \beta conditioned on y
-  map <- optim(par = b, fn = posterior_multiple, gr = gr_multiple, method ="BFGS", control = list(fnscale = -1),
-               Psi = Psi, sumPsi = sumPsi, y_bar = y_bar, D = Sigma, R = R)$par
-  # Call the hessian function
-  norm_precision <- he_multiple(b = map, Psi = Psi, y_bar = y_bar, D = Sigma , R = R)
-  # Calculate the \beta^* proposal, using Cholesky Sampling
-  betaprop <- Chol_sampling(Lt = chol(norm_precision), d = B + 1, beta_c = map)
-  # Calculate acceptance ratio
-  prop_ratio <- min(1, exp(posterior_multiple(b = betaprop, Psi = Psi, sumPsi = sumPsi, y_bar = y_bar,  D = Sigma, R = R) -
-                             posterior_multiple(b = b, Psi = Psi, sumPsi = sumPsi, y_bar = y_bar,  D = Sigma, R = R)))
-  # Create acceptance decision
-  accept <- runif(1)
-  if(accept < prop_ratio){
-    # Accept betaprop as new beta^*
-    Theta[g, -(B+2)] <- betaprop
-  }else{
-    # Reject betaprop as new beta^*
-    Theta[g, -(B+2)] <- b
+  for(r in 1:R){
+    br = bb_beta[,r]
+    # Maximum A Posteriori (MAP) estimate : finds the \beta that gives us the mode of the conditional posterior of \beta conditioned on y
+    map <- optim(par = br, fn = posterior_hierarch_Lambda, gr = gradient_hierarch_Lambda, method ="BFGS", control = list(fnscale = -1),
+                 Psi = Psi, sumPsi = sumPsi, y = perio[,r], b = betavalues, lambda = Lambda_inv)$par
+    # Call the hessian function
+    norm_precision <- he_hierarch_Lambda(br = map, Psi = Psi, y = perio[,r], lambda = Lambda_inv) * -1
+    # Calculate the \beta^* proposal, using Cholesky Sampling
+    betaprop <- Chol_sampling(Lt = chol(norm_precision), d = B + 1, beta_c = map)
+    # Calculate acceptance ratio
+    prop_ratio <- min(1, exp(posterior_hierarch_Lambda(br = betaprop, b = b, Psi = Psi, sumPsi = sumPsi, y = perio[,r], lambda = Lambda_inv) -
+                               posterior_hierarch_Lambda(br = br, b = b, Psi = Psi, sumPsi = sumPsi, y = perio[,r], lambda = Lambda_inv)))
+    # Create acceptance decision
+    accept <- runif(1)
+    if(accept < prop_ratio){
+      # Accept betaprop as new beta^(r)
+      bb_beta_array[g, ,r] <- betaprop
+    }else{
+      # Reject betaprop as new beta^(r)
+      bb_beta_array[g, ,r] <- br
+    }
   }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   ##############################
   # Tau^2 Update: Gibbs Sampler: conditional conjugate prior for the half-t
   ##############################
