@@ -30,7 +30,7 @@ burn = 50
 # Pick an AR() process: AR(1), AR(2), AR(3)
 # Create coefficient \phi
 # For AR(1)
-phi = 0.25
+phi = 0.5
 
 # For AR(2)
 #phi <- c(1.4256, -0.9)
@@ -41,13 +41,14 @@ phi = 0.25
 # Need to Create ~ R copies of the time series and store it in a matrix
 # Each column of the matrix contains a time series
 # R : the number of independent stationary time series (R) 
-R = 100
+R = 5
 # create matrix to store the time series: (R x n)
 matrix_timeseries = matrix(NA, nrow = n, ncol = R)
 for(r in 1:R){
   matrix_timeseries[,r] <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
 }
-
+dim(matrix_timeseries)
+plot(matrix_timeseries[,1], type = "l")
 
 # Plot the time series that will be used
 # par(mfrow = c(5,2))
@@ -62,6 +63,8 @@ dim(perio)
 # subset perio for unique values, J = ceil((n-1) / 2) 
 perio = perio[(0:J) + 1, , drop=FALSE]
 dim(perio)
+par(mfrow = c(1,1))
+plot(perio[,1], type = "l")
 
 # par(mfrow = c(5,2))
 # for(i in 1:(ncol(perio))){
@@ -102,7 +105,7 @@ D = 1 / (4 * pi * (1:B)^2)
 sigmasquare = 100
 
 # Set number of iterations
-iter = 10000
+iter = 1000
 
 #######################
 # Initialize parameters
@@ -282,26 +285,6 @@ mean(arma_spec(omega = omega, phi = phi) > summary_stats$upper | arma_spec(omega
 # 0.161 for B = 1   ; n = 1000; K = 10
 # 0.187 for B = 1   ; n = 1000; K = 5
 
-
-#######################################
-# Diagnostic Plots
-#######################################
-
-# Functional Boxplots
-dim(specdens)
-# Create a functional boxplot for the estimated log of the spectral density
-fbplot(fit = log(specdens), x = omega, xlim = range(omega), ylim = range(log(specdens)), prob = c(0.95, 0.5, .05),
-       xlab = "omega",
-       factor = 1.5,
-       col = c("pink", "cyan", "orange"))
-#lines(x = omega, y = log(summary_stats$lower), col = "cyan2")
-
-
-# Create Trace Plots using mcmc package
-colnames(Theta) = c(paste("b", seq(0,B), sep = ""), "tausq")
-# tau^2 trace plot
-mcmc_trace(Theta[,B+2, drop = FALSE])
-mcmc_trace(Theta[,-c(B+2), drop = FALSE])
 
 
 
