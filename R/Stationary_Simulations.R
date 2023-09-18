@@ -5,18 +5,18 @@ library(fda)
 library(bayesplot)
 library(ggplot2)
 library(mcmcse)
-set.seed(31)
-source("R/posterior_multiple.R")
-source("R/gr_multiple.R")
-source("R/he_multiple.R")
+set.seed(100)
+source("R/Model_1/posterior_multiple.R")
+source("R/Model_1/gr_multiple.R")
+source("R/Model_1/he_multiple.R")
 source("R/Chol_sampling.R")
 source("R/arma_spec.R")
-source("R/mcmc_stationary.R")
+source("R/Model_1/mcmc_stationary.R")
 
 # Set outer parameters for simulations
-n = 100
+n = 1000
 iter = 1000
-R = 5
+R = 8
 B = 10
 phi = 0.5
 # this must match what is used in mcmc_stationary.R
@@ -43,7 +43,7 @@ full_Psi[,1] = 1
 true_Beta = coef(lm(log(full_spec) ~ full_Psi + 0))
 
 # How many simulations:
-Sim = 300
+Sim = 1000
 
 # Create object to store coverage checks
 Coverage = matrix(NA, nrow = Sim, ncol = length(test_omega))
@@ -161,6 +161,7 @@ Sys.time() - t1
 
 # Point-wise Coverage estimate
 colMeans(Coverage)
+plot.ts(colMeans(Coverage))
 
 # Simultaneous Beta Coverage
 print(Beta_distance)
@@ -176,7 +177,9 @@ mean(Beta_distance <= qchisq(p = .95, df = B + 1))
 
 par(mfrow = c(3,4))
 for(i in 1:ncol(beta_bias)){
-  hist(beta_bias[,i])
+  hist(beta_bias[,i],
+       main = "Beta Bias",
+       xlab = "bias")
 }
 
 # Bias
@@ -184,6 +187,7 @@ beta_bias_mean = round(colMeans(beta_bias), 4)
 beta_bias_sd = apply(beta_bias, 2, sd)
 beta_bias_se = beta_bias_sd / sqrt(Sim)
 # plot the beta_bias with 2 SE (to visualize)
+#pdf(file = "~/Documents/Tessellation/R/Simulation_Results/Beta_bias.pdf")
 par(mfrow = c(3,4))
 for(i in 1:ncol(beta_bias)){
   hist(beta_bias[,i])
@@ -193,9 +197,19 @@ for(i in 1:ncol(beta_bias)){
                 beta_bias_mean[i] - 2 * beta_bias_se[i]),
           y = c(0, 0, 50, 50), col = "lightblue")
 }
-
+#dev.off()
 # Do boolean to show which are within 2SE of the mean bias estimate
 ifelse((0 >= beta_bias_mean - 2 * beta_bias_se) & (0 <= beta_bias_mean + 2 * beta_bias_se), yes = 1, no = 0)
+# Seed 100/R1:
+# 0 0 0 0 0 1 0 1 1 1 1
+# Seed 31/R5 :
+# 1 0 0 0 0 1 1 1 1 1 1
+# Seed 100/R5 :
+# 1 0 0 0 0 1 1 1 1 1 1
+# Seed 31/n1000/R5 :
+# 1 0 0 0 1 1 0 1 1 1 1
+# Seed 100/n1000/R5 :
+# 1 0 0 0 1 1 1 1 1 1 1
 
 ############################
 # Spectral Bias
@@ -225,8 +239,10 @@ mean(specbias_2se)
 # 25% within
 
 # Point-wise (across omegas) Spectral Density Coverage Estimate
+par(mfrow = c(1,1))
+pdf(file = "~/Documents/Tessellation/R/Simulation_Results/Pointwise_SpecDens_Coverage.pdf")
 plot(x = test_omega, y = colMeans(Coverage), type = "l")
-
+dev.off()
 
 #################
 # Sim Results
@@ -338,16 +354,22 @@ mean(Frat <= critf)
 #######################################
 mean(Simult_truespec)
 # 53%
+
+# Seed 100 :
+# 0.723
 # Functional Boxplots
 # Create a functional boxplot for the estimated log of the spectral density
 # Will show the most recent Simulation result
 par(mfrow = c(1,1))
+pdf("~/Documents/Tessellation/R/Simulation_Results/Credible_Simultaneous_Interval.pdf")
 Simult_specdens = fbplot(fit = log(test_specdens), x = test_omega, xlim = range(test_omega), ylim = range(log(test_specdens)), prob = c(0.95, 0.5, .05),
        xlab = "omega",
        factor = 1.5,
        barcol = "dodgerblue" ,
        col = c("purple", "orange", "violetred3"),
-       fullout = TRUE)
+       fullout = TRUE,
+       main = "Credible Interval (Simultaneous)")
+
 
 # select curves where 95% falls above this depth
 deepcurve = log(test_specdens)[, Simult_specdens$depth >= quantile(Simult_specdens$depth, .05)]
@@ -358,24 +380,44 @@ lowercurve = apply(deepcurve, 1, FUN = min)
 lines(test_omega, uppercurve, lwd = 2)
 lines(test_omega, lowercurve, lwd = 2)
 lines(test_omega, log(true_spec), lwd = 2, col = "green")
-
+legend("topright",
+       legend = c("middle 95", "middle 50", "middle 5", "true spectral density"),
+       col = c("purple", "orange", "violetred3", "green"),
+       pch = c(20,20,20,20))
+dev.off()
 # Calculate if truespec dens completely fall within uppercurve and lowercurve
 # Will return TRUE if true curve is everywhere in bounds
 all((log(true_spec) <= uppercurve) & (log(true_spec) >= lowercurve))
+# seed31/ R1/ n = 500:
+# TRUE
+# seed100/ R1 / n = 500:
+# TRUE
 
+# seed 31 / R5 / n = 500 :
+# FALSE
+# seed 100 / R5 / n = 500 :
+# TRUE
 
+# seed 31 / R5 / n = 1000:
+# FALSE
+# seed 100 / R5 / n = 1000:
+# TRUE
 
 # Create Trace Plots using mcmc package
 colnames(Theta) = c(paste("b", seq(0,B), sep = ""), "tausq")
 # tau^2 trace plot
+pdf(file = "~/Documents/Tessellation/R/Simulation_Results/tausq_traceplots.pdf")
 mcmc_trace(Theta[,B+2, drop = FALSE])
+dev.off()
+pdf(file = "~/Documents/Tessellation/R/Simulation_Results/beta_traceplots.pdf")
 mcmc_trace(Theta[,-c(B+2), drop = FALSE])
-
+dev.off()
 
 
 #############################################
 # Plot the posterior predictive and true
 #############################################
+pdf(file = "~/Documents/Tessellation/R/Simulation_Results/posterior_predictive.pdf")
 Simult_specdens = fbplot(fit = log(post_pred[,,Sim]), x = test_omega, xlim = range(test_omega), ylim = range(log(post_pred[,,Sim])), prob = c(0.95, 0.5, .05),
                          xlab = "omega",
                          factor = 1.5,
@@ -385,7 +427,11 @@ Simult_specdens = fbplot(fit = log(post_pred[,,Sim]), x = test_omega, xlim = ran
                          ylab = "periodogram",
                          main = "Posterior Predictive")
 lines(x = omega, y = log(av_perio), col = "green", lwd = 2)
-
+legend("topright",
+       legend = c("middle 95", "middle 50", "middle 5", "true periodogram"),
+       col = c("purple", "orange", "violetred3", "green"),
+       pch = c(20,20,20,20))
+dev.off()
 
 #################################################
 # mcmcse : not helpful unless altering iter count
