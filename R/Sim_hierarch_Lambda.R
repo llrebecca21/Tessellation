@@ -27,9 +27,6 @@ Sim_hierarch_Lambda = function(n, iter,R = 1, B = 10 ){
   # dim(perio)
   # subset perio for unique values, J = ceil((n-1) / 2) 
   perio = perio[(0:J) + 1, , drop=FALSE]
-  # dim(perio)
-  par(mfrow = c(1,1))
-  plot(perio[,1], type = "l")
   
   #################
   # MCMC parameters
@@ -51,18 +48,12 @@ Sim_hierarch_Lambda = function(n, iter,R = 1, B = 10 ){
   # prior variance for beta_0
   sigmasquare = 100
 
-  
   # prior for Lambda : Wishart
   # degrees of freedom
   deg = B+1
   # initial V
   V = diag(B+1)
-  
-  # Calculate ybar(omega_j)
-  y_bar = rowMeans(perio)
-  
-  
-  
+
   #######################
   # Initialize parameters
   #######################
@@ -81,13 +72,11 @@ Sim_hierarch_Lambda = function(n, iter,R = 1, B = 10 ){
   Psi = outer(X = omega, Y = 0:B, FUN = function(x,y){sqrt(2)* cos(y * x)})
   # redefine the first column to be 1's
   Psi[,1] = 1
-  dim(Psi)
-  # Check X is orthogonal basis
-  round(crossprod(Psi),5)
+
   # not orthogonal because we are not evaluating the periodogram at the full n-1 values.
   # Initialize beta using least squares solution
   # Using J amount of data for periodogram, can initialize beta this way:
-  betavalues = solve(crossprod(Psi), crossprod(Psi, log(y_bar)))
+  betavalues = solve(crossprod(Psi), crossprod(Psi, log(rowMeans(perio))))
   
   # Initialize bb_beta at the mean for the prior of bb_beta
   bb_beta = tcrossprod(betavalues, rep(1,R))
@@ -116,11 +105,7 @@ Sim_hierarch_Lambda = function(n, iter,R = 1, B = 10 ){
   # MCMC Algorithm
   #####################
   
-  #Rprof()
-  pb = progress_bar$new(total = iter - 1)
-  t1 = Sys.time()
   for (g in 2:iter) {
-    pb$tick()
     #g = 2
     #########################
     # tau^2 and lambda update
@@ -181,16 +166,7 @@ Sim_hierarch_Lambda = function(n, iter,R = 1, B = 10 ){
     }
     
   }
-  Sys.time() - t1
-  # Rprof(NULL)
-  # summaryRprof()
   
-  
-  
-  
-  
-  
-  
-  
+  return(list("bb_beta_array" = bb_beta_array, "Lambda_array" = Lambda_array, "Theta" = Theta, "theta_vec" = theta_vec, "perio" = perio))
   
 }
