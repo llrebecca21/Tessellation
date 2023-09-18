@@ -4,6 +4,11 @@ library(progress)
 library(fda)
 library(bayesplot)
 library(ggplot2)
+source("R/gradient_hierarch_Lambda.R")
+source("R/posterior_hierarch_Lambda.R")
+source("R/he_hierarch_Lambda.R")
+source("R/Chol_sampling.R")
+source("R/arma_spec.R")
 # Create time series 
 # set parameters for generating data
 # length of a single time series
@@ -38,10 +43,10 @@ dim(matrix_timeseries)
 # Define Periodogram
 # Define y_n(\omega_j) for the posterior function below
 perio = (abs(mvfft(matrix_timeseries)) ^ 2 / n)
-dim(perio)
+# dim(perio)
 # subset perio for unique values, J = ceil((n-1) / 2) 
 perio = perio[(0:J) + 1, , drop=FALSE]
-dim(perio)
+# dim(perio)
 par(mfrow = c(1,1))
 plot(perio[,1], type = "l")
 
@@ -137,9 +142,10 @@ Lambda_array[1,,] = Lambda_inv
 
 #Rprof()
 pb = progress_bar$new(total = iter - 1)
+t1 = Sys.time()
 for (g in 2:iter) {
   pb$tick()
-  g = 2
+  #g = 2
   #########################
   # tau^2 and lambda update
   #########################
@@ -175,6 +181,7 @@ for (g in 2:iter) {
   ######################
   # Update \mathbb{B} with Metropolis Hastings Sampler
   for(r in 1:R){
+    #r = 1
     br = bb_beta[,r]
     # Maximum A Posteriori (MAP) estimate : finds the \beta that gives us the mode of the conditional posterior of \beta conditioned on y
     map <- optim(par = br, fn = posterior_hierarch_Lambda, gr = gradient_hierarch_Lambda, method ="BFGS", control = list(fnscale = -1),
@@ -184,8 +191,8 @@ for (g in 2:iter) {
     # Calculate the \beta^* proposal, using Cholesky Sampling
     betaprop <- Chol_sampling(Lt = chol(norm_precision), d = B + 1, beta_c = map)
     # Calculate acceptance ratio
-    prop_ratio <- min(1, exp(posterior_hierarch_Lambda(br = betaprop, b = b, Psi = Psi, sumPsi = sumPsi, y = perio[,r], lambda = Lambda_inv) -
-                               posterior_hierarch_Lambda(br = br, b = b, Psi = Psi, sumPsi = sumPsi, y = perio[,r], lambda = Lambda_inv)))
+    prop_ratio <- min(1, exp(posterior_hierarch_Lambda(br = betaprop, b = betavalues, Psi = Psi, sumPsi = sumPsi, y = perio[,r], lambda = Lambda_inv) -
+                               posterior_hierarch_Lambda(br = br, b = betavalues, Psi = Psi, sumPsi = sumPsi, y = perio[,r], lambda = Lambda_inv)))
     # Create acceptance decision
     accept <- runif(1)
     if(accept < prop_ratio){
@@ -197,42 +204,63 @@ for (g in 2:iter) {
     }
   }
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  ##############################
-  # Tau^2 Update: Gibbs Sampler: conditional conjugate prior for the half-t
-  ##############################
-  # 1/rgamma is the same as invgamma (so we don't need the other library)
-  lambda = 1/rgamma(1, (nu+1)/2, nu/tsq + etasq)
-  newtsq = 1/rgamma(1, (B + 1 + nu)/2, sum(Theta[g, -c(1,B+2)]^2 / D) / 2 + nu/lambda)
-  # Update Theta matrix with new tau squared value
-  Theta[g,B+2] = newtsq
-  # Update Sigma with new tau^2 value
-  Sigma = c(sigmasquare, D * newtsq)
 }
+Sys.time() - t1
 # Rprof(NULL)
 # summaryRprof()
 
+
+#######################
+# Plots and Diagnostics
+#######################
+# Need to update this code for the hierarchical set-up
+# Remove burn-in
+burnin = 10
+Theta = Theta[-(1:burnin),]
+bb_beta_array = bb_beta_array[-(1:burnin),,]
+Lambda_array = Lambda_array[-(1:burnin),,]
+r = 5
+
+
+# Create spectral densities for the first series
+specdens = exp(Psi %*% t(bb_beta_array[,,r]))
+par(mfrow = c(1, 1))
+plot(x =c(), y=c(), xlim = c(0,3), ylim = range(log(specdens)), ylab = "Spectral Density", xlab = "omega",
+     main = "Spectral Density Estimates \nwith True Spectral Density")
+for(h in sample(ncol(specdens), 100, replace = FALSE)){
+  lines(x = omega, y = log(specdens[,h]), col = rgb(0, 0, 0, 0.2))
+}
+lines(x = omega, y = log(arma_spec(omega = omega, theta = theta_vec[r])), col = "red", lwd = 2)
+legend("topright", col = c("black", "red"), lwd = c(1,2), legend = c("Estimate", "True"))
+
+
+theta_vec
+
+Lambda_array[900,,]
+
+
+
+# Plot the Spectral Density Estimates
+#pdf(file = "Spectral_Density_Estimates.pdf",
+#    width = 10,
+#    height = 5,)
+specdens = exp(Psi %*% t(Theta[ ,-(B+2)]))
+par(mfrow = c(1, 1))
+plot(x =c(), y=c(), xlim = c(0,3), ylim = range(log(specdens)), ylab = "Spectral Density", xlab = "omega",
+     main = "Spectral Density Estimates \nwith True Spectral Density")
+for(h in sample(ncol(specdens), 1000, replace = FALSE)){
+  lines(x = omega, y = log(specdens[,h]), col = rgb(0, 0, 0, 0.2))
+}
+lines(x = omega, y = log(arma_spec(omega = omega, phi = phi)), col = "red", lwd = 2)
+legend("topright", col = c("black", "red"), lwd = c(1,2), legend = c("Estimate", "True"))
+#dev.off()
+
+dim(specdens)
+# n X (numiter - burn)
+
+# Create Data frame to store the lower bound and upper bound and mean
+summary_stats <- data.frame("lower" = apply(specdens, 1, FUN = function(x){quantile(x, .025)}), "mean" = rowMeans(specdens),
+                            "upper" = apply(specdens, 1, FUN = function(x){quantile(x, 0.975)}))
 
 
 
