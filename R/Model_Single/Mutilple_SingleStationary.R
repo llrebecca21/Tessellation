@@ -8,8 +8,8 @@ set.seed(31)
 source("R/Model_Single/posterior_multiple.R")
 source("R/Model_Single/gr_multiple.R")
 source("R/Model_Single/he_multiple.R")
-source("R/Chol_sampling.R")
-source("R/arma_spec.R")
+source("R/General_Functions/Chol_sampling.R")
+source("R/General_Functions/arma_spec.R")
 
 # 31 : perfect at edges use for example that this is a seed thing
 
