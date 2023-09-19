@@ -4,8 +4,8 @@ set.seed(1080)
 source("R/Model_Single/whittle_post.R")
 source("R/Model_Single/gr_single.R")
 source("R/Model_Single/he_single.R")
-source("R/Chol_sampling.R")
-source("R/arma_spec.R")
+source("R/General_Functions/Chol_sampling.R")
+source("R/General_Functions/arma_spec.R")
 
 # Create single time series: AR(1)
 
