@@ -9,8 +9,8 @@ set.seed(100)
 source("R/Model_Wishart/posterior_hierarch_Lambda.R")
 source("R/Model_Wishart/gradient_hierarch_Lambda.R")
 source("R/Model_Wishart/he_hierarch_Lambda.R")
-source("R/Chol_sampling.R")
-source("R/arma_spec.R")
+source("R/General_Functions/Chol_sampling.R")
+source("R/General_Functions/arma_spec.R")
 source("R/Model_Wishart/Sim_hierarch_Lambda.R")
 
 # Set outer parameters for simulations
