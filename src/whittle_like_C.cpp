@@ -14,7 +14,6 @@
 
 #include <boost/math/tools/roots.hpp>
 
-
 //[[Rcpp::depends(BH)]]
 //[[Rcpp::depends(RcppArmadillo)]]
 
@@ -25,6 +24,7 @@
 namespace tools = boost::math::tools;
 using namespace Rcpp;
 using namespace arma;
+
 
 //[[Rcpp::export]]
 double whittle_like_C(Rcpp::List ytemp, arma::vec index, arma::vec nseg_time_temp, arma::vec beta, int nbeta, int nbasis)
