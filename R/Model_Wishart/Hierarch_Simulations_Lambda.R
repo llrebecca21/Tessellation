@@ -12,6 +12,7 @@ source("R/Model_Wishart/he_hierarch_Lambda.R")
 source("R/General_Functions/Chol_sampling.R")
 source("R/General_Functions/arma_spec.R")
 source("R/Model_Wishart/Sim_hierarch_Lambda.R")
+source("R/Data_Generation/data_generation.R")
 
 # Set outer parameters for simulations
 n = 1000
@@ -30,7 +31,6 @@ Lambda_big = array(data = NA, dim = c(Sim, iter, B+1, B+1))
 Theta_big = array(data = NA, dim = c(Sim, iter, B+2))
 theta_true_big = array(data = NA, dim = c(Sim, R))
 perio_big = array(data = NA, dim = c(Sim, J+1 , R))
-
 
 
 pb = progress_bar$new(total = Sim)
