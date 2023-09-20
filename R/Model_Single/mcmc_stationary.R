@@ -20,16 +20,11 @@ mcmc_stationary <- function(n, iter, phi ,R = 1, B = 10 ){
   # for j = 0,...,n-1
   # omega = (2 * pi * (0:(n-1)))/n
   omega = (2 * pi * (0:J)) / n
-  # burn-in period for ARsim
-  burn = 50
   
-  # Need to Create ~ R copies of the time series and store it in a matrix
-  # Each column of the matrix contains a time series
-  # create matrix to store the time series: (R x n)
-  matrix_timeseries = matrix(NA, nrow = n, ncol = R)
-  for(r in 1:R){
-    matrix_timeseries[,r] <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
-  }
+  # Call function to generate data
+  data_gen = generate_adapt(phi = phi, n = n, R = R)
+  # extract data matrix
+  matrix_timeseries = data_gen$matrix_timeseries
 
   # Define Periodogram
   # Define y_n(\omega_j) for the posterior function below
