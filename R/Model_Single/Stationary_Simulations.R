@@ -12,6 +12,7 @@ source("R/Model_Single/he_multiple.R")
 source("R/Chol_sampling.R")
 source("R/arma_spec.R")
 source("R/Model_Single/mcmc_stationary.R")
+source("R/Data_Generation/data_generation.R")
 
 # Set outer parameters for simulations
 n = 1000
