@@ -3,28 +3,16 @@ Sim_hierarch_Lambda = function(n, iter,R = 1, B = 10 ){
   J = floor((n-1) / 2)
   # Frequency (\omega_j): defined on [0, 2\pi)
   omega = (2 * pi * (0:J)) / n
-  # burn-in period for ARsim
-  burn = 50
-
-  # create matrix to store the time series: (R x n)
-  matrix_timeseries = matrix(NA, nrow = n, ncol = R)
-  # create vector to store "true" theta
-  theta_vec = rep(NA, R)
-  for(r in 1:R){
-    # set AR parameter
-    phi = NULL
-    # set MA parameter
-    theta = runif(n = 1, min = 0, max = 1)
-    theta_vec[r] = theta
-    matrix_timeseries[,r] <- arima.sim(model = list(ar = phi, ma = theta), n = n, n.start = burn)
-  }
-  dim(matrix_timeseries)
-  # plot(matrix_timeseries[,1], type = "l")
   
+  # call function to generate Krafty
+  data_gen = generate_Krafty(n = n, R = R)
+  #extract pieces from function
+  matrix_timeseries = data_gen$matrix_timeseries
+  theta_true = data_gen$theta_true
+
   # Define Periodogram
   # Define y_n(\omega_j) for the posterior function below
   perio = (abs(mvfft(matrix_timeseries)) ^ 2 / n)
-  # dim(perio)
   # subset perio for unique values, J = ceil((n-1) / 2) 
   perio = perio[(0:J) + 1, , drop=FALSE]
   
@@ -167,6 +155,6 @@ Sim_hierarch_Lambda = function(n, iter,R = 1, B = 10 ){
     
   }
   
-  return(list("bb_beta_array" = bb_beta_array, "Lambda_array" = Lambda_array, "Theta" = Theta, "theta_vec" = theta_vec, "perio" = perio))
+  return(list("bb_beta_array" = bb_beta_array, "Lambda_array" = Lambda_array, "Theta" = Theta, "theta_true" = theta_true, "perio" = perio))
   
 }
