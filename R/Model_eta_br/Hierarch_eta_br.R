@@ -4,51 +4,28 @@ library(progress)
 library(fda)
 library(bayesplot)
 library(ggplot2)
-#source("R/gradient_hierarch_Lambda.R")
-#source("R/posterior_hierarch_Lambda.R")
-#source("R/he_hierarch_Lambda.R")
-source("R/Chol_sampling.R")
-source("R/arma_spec.R")
-# Create time series 
-# set parameters for generating data
-# length of a single time series
-n = 1000
+source("R/General_Functions/Chol_sampling.R")
+source("R/General_Functions/arma_spec.R")
+source("R/Data_Generation/data_generation.R")
+# Set outer parameters for simulations
+n = 1000 #time series length
+iter = 1000
+R = 8 #number of time series
+B = 10 #number of basis coefficients
 # highest little j index value for the frequencies
 J = floor((n-1) / 2)
 # Frequency (\omega_j): defined on [0, 2\pi)
 omega = (2 * pi * (0:J)) / n
-# burn-in period for ARsim
-burn = 50
 
-
-# Need to Create ~ R copies of the time series and store it in a matrix
-# Each column of the matrix contains a time series
-# R : the number of independent stationary time series (R) 
-R = 5
-# create matrix to store the time series: (R x n)
-matrix_timeseries = matrix(NA, nrow = n, ncol = R)
-# create vector to store "true" theta
-theta_vec = rep(NA, R)
-for(r in 1:R){
-  # set AR parameter
-  phi = NULL
-  # set MA parameter
-  theta = runif(n = 1, min = 0, max = 1)
-  theta_vec[r] = theta
-  matrix_timeseries[,r] <- arima.sim(model = list(ar = phi, ma = theta), n = n, n.start = burn)
-}
-dim(matrix_timeseries)
-# plot(matrix_timeseries[,1], type = "l")
+# generate data
+gendata = generate_Krafty(n = n, R = R)
+timeseries = gendata$matrix_timeseries
 
 # Define Periodogram
 # Define y_n(\omega_j) for the posterior function below
-perio = (abs(mvfft(matrix_timeseries)) ^ 2 / n)
-# dim(perio)
+perio = (abs(mvfft(timeseries)) ^ 2 / n)
 # subset perio for unique values, J = ceil((n-1) / 2) 
 perio = perio[(0:J) + 1, , drop=FALSE]
-# dim(perio)
-par(mfrow = c(1,1))
-plot(perio[,1], type = "l")
 
 #################
 # MCMC parameters
