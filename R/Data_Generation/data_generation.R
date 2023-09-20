@@ -14,7 +14,7 @@ generate_Krafty = function(n = 1000, R = 1,burn = 50){
   return(list("matrix_timeseries" = matrix_timeseries, "theta_true" = theta_true))
 }
 
-
+# Generate a general AR(p) process
 generate_adapt = function(phi, n = 1000, R = 1, burn = 50){
   # Need to Create ~ R copies of the time series and store it in a matrix
   # Each column of the matrix contains a time series
