@@ -9,6 +9,7 @@ source("R/posterior_hierarch_Lambda.R")
 source("R/he_hierarch_Lambda.R")
 source("R/Chol_sampling.R")
 source("R/arma_spec.R")
+source("R/Data_Generation/data_generation.R")
 # Create time series 
 # set parameters for generating data
 # length of a single time series
@@ -25,28 +26,20 @@ burn = 50
 # Each column of the matrix contains a time series
 # R : the number of independent stationary time series (R) 
 R = 5
-# create matrix to store the time series: (R x n)
-matrix_timeseries = matrix(NA, nrow = n, ncol = R)
-# create vector to store "true" theta
-theta_vec = rep(NA, R)
-for(r in 1:R){
-  # set AR parameter
-  phi = NULL
-  # set MA parameter
-  theta = runif(n = 1, min = 0, max = 1)
-  theta_vec[r] = theta
-  matrix_timeseries[,r] <- arima.sim(model = list(ar = phi, ma = theta), n = n, n.start = burn)
-}
-dim(matrix_timeseries)
-# plot(matrix_timeseries[,1], type = "l")
+
+# call function to generate Krafty
+data_gen = generate_Krafty(n = n, R = R)
+#extract pieces from function
+matrix_timeseries = data_gen$matrix_timeseries
+theta_true = data_gen$theta_true
 
 # Define Periodogram
 # Define y_n(\omega_j) for the posterior function below
 perio = (abs(mvfft(matrix_timeseries)) ^ 2 / n)
-# dim(perio)
+
 # subset perio for unique values, J = ceil((n-1) / 2) 
 perio = perio[(0:J) + 1, , drop=FALSE]
-# dim(perio)
+
 par(mfrow = c(1,1))
 plot(perio[,1], type = "l")
 
