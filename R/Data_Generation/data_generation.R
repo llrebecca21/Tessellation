@@ -13,3 +13,30 @@ generate_Krafty = function(n = 1000, R = 1,burn = 50){
   }
   return(list("matrix_timeseries" = matrix_timeseries, "theta_true" = theta_true))
 }
+
+
+generate_adapt = function(phi, n = 1000, R = 1, burn = 50){
+  # Need to Create ~ R copies of the time series and store it in a matrix
+  # Each column of the matrix contains a time series
+  # create matrix to store the time series: (R x n)
+  matrix_timeseries = matrix(NA, nrow = n, ncol = R)
+  for(r in 1:R){
+    matrix_timeseries[,r] <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
+  }
+  return(list("matrix_timeseries" = matrix_timeseries))
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
