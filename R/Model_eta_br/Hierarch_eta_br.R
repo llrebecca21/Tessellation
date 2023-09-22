@@ -7,6 +7,9 @@ library(ggplot2)
 source("R/General_Functions/Chol_sampling.R")
 source("R/General_Functions/arma_spec.R")
 source("R/Data_Generation/data_generation.R")
+source("R/Model_eta_br/gradient_eta_br.R")
+source("R/Model_eta_br/he_eta_br.R")
+source("R/Model_eta_br/posterior_eta_br.R")
 # Set outer parameters for simulations
 n = 1000 #time series length
 iter = 1000
@@ -20,6 +23,7 @@ omega = (2 * pi * (0:J)) / n
 # generate data
 gendata = generate_Krafty(n = n, R = R)
 timeseries = gendata$matrix_timeseries
+theta_true = gendata$theta_true
 
 # Define Periodogram
 # Define y_n(\omega_j) for the posterior function below
@@ -104,11 +108,19 @@ for (g in 2:iter) {
   # Update Theta matrix with new tau squared value
   Theta[g,B+2] = tausquared
   # Update Sigma with new tau^2 value
-  Sigma = c(sigmasquare, D * tausquared)
+  Sigma = c(1, D * tausquared)
   #######################################
   # Sample \eta_b^r using slicing method
   #######################################
-  
+  rate = c(bb_beta * bb_beta / (2 * Sigma))
+  p = R * (B + 1)
+  u = runif(p)/(1 + c(eta_br))
+  q = runif(p)*(pgamma(rate/u^2, shape = 1))
+  eta_br = qgamma(q, shape = 1)/rate
+  # reconstruct shape
+  eta_br = matrix(eta_br, nrow = B + 1 , ncol = R)
+  # put eta_br into array for storage
+  eta_br_array[g,,] = eta_br
 
   ######################
   # bb_beta update :MH
@@ -117,16 +129,17 @@ for (g in 2:iter) {
   for(r in 1:R){
     #r = 1
     br = bb_beta[,r]
+    eta_r = eta_br[,r]
     # Maximum A Posteriori (MAP) estimate : finds the \beta that gives us the mode of the conditional posterior of \beta conditioned on y
-    map <- optim(par = br, fn = posterior_hierarch_Lambda, gr = gradient_hierarch_Lambda, method ="BFGS", control = list(fnscale = -1),
-                 Psi = Psi, sumPsi = sumPsi, y = perio[,r], b = betavalues, lambda = Lambda_inv)$par
+    map = optim(par = br, fn = posterior_eta_br, gr = gradient_eta_br, method ="BFGS", control = list(fnscale = -1),
+                 Psi = Psi, sumPsi = sumPsi, y = perio[,r], Sigma = Sigma, eta_r = eta_r)$par
     # Call the hessian function
-    norm_precision <- he_hierarch_Lambda(br = map, Psi = Psi, y = perio[,r], lambda = Lambda_inv) * -1
+    norm_precision = he_eta_br(br = map, Psi = Psi, y = perio[,r], Sigma = Sigma, eta_r = eta_r) * -1
     # Calculate the \beta^* proposal, using Cholesky Sampling
-    betaprop <- Chol_sampling(Lt = chol(norm_precision), d = B + 1, beta_c = map)
+    betaprop = Chol_sampling(Lt = chol(norm_precision), d = B + 1, beta_c = map)
     # Calculate acceptance ratio
-    prop_ratio <- min(1, exp(posterior_hierarch_Lambda(br = betaprop, b = betavalues, Psi = Psi, sumPsi = sumPsi, y = perio[,r], lambda = Lambda_inv) -
-                               posterior_hierarch_Lambda(br = br, b = betavalues, Psi = Psi, sumPsi = sumPsi, y = perio[,r], lambda = Lambda_inv)))
+    prop_ratio = min(1, exp(posterior_eta_br(br = betaprop,  Psi = Psi, sumPsi = sumPsi, y = perio[,r], eta_r = eta_r, Sigma = Sigma) -
+                               posterior_eta_br(br = br, Psi = Psi, sumPsi = sumPsi, y = perio[,r], eta_r = eta_r, Sigma = Sigma)))
     # Create acceptance decision
     accept <- runif(1)
     if(accept < prop_ratio){
@@ -140,188 +153,6 @@ for (g in 2:iter) {
   
 }
 Sys.time() - t1
-
-
-
-
-
-
-
-
-#################################
-# Sample \mathbb{B} using MH step
-#################################
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#################
-# MCMC parameters
-#################
-
-# Define lambda for the half-t prior: \pi(\tau^2 | \lambda) and \pi(\lambda)
-# lambda = 1
-# Define degrees of freedom for half-t prior: \pi(\tau^2 | \lambda)
-# Cauchy nu = 1
-# nu = 3
-# Define eta as the other scale parameter for half-t prior: \pi(\lambda)
-# etasq = 1 gives standard Cauchy; higher eta gives wider Cauchy
-# etasq = 1
-
-# Define D's main diagonal : 
-# D is a measure of prior variance for \beta_1 through \beta_K
-# Rebecca's D
-# D = 1 / (4 * pi * (1:B)^2)
-
-# prior variance for beta_0
-# sigmasquare = 100
-
-# Set number of iterations
-# iter = 1000
-
-# prior for Lambda : Wishart
-# degrees of freedom
-# deg = B+1
-# initial V
-# V = diag(B+1)
-
-# Calculate ybar(omega_j)
-# y_bar = rowMeans(perio)
-
-#######################
-# Initialize parameters
-#######################
-# set tau^2 value
-#tausquared = 50
-# The new D matrix that houses the prior variance of \beta^* 
-# Sigma = c(sigmasquare, D * tausquared)
-
-# Create matrix to store estimated samples row-wise for (\beta^*, \tau^2)
-# ncol: number of parameters (beta^*, tau^2)
-# dim : (iter) x (B + 2)
-# Theta = matrix(NA, nrow = iter, ncol = B + 2)
-
-# Create matrix of the basis functions
-# fix fourier frequencies
-#Psi = outer(X = omega, Y = 0:B, FUN = function(x,y){sqrt(2)* cos(y * x)})
-# redefine the first column to be 1's
-#Psi[,1] = 1
-#dim(Psi)
-# Check X is orthogonal basis
-#round(crossprod(Psi),5)
-# not orthogonal because we are not evaluating the periodogram at the full n-1 values.
-# Initialize beta using least squares solution
-# Using J amount of data for periodogram, can initialize beta this way:
-# betavalues = solve(crossprod(Psi), crossprod(Psi, log(y_bar)))
-
-# Initialize bb_beta at the mean for the prior of bb_beta
-#bb_beta = tcrossprod(betavalues, rep(1,R))
-
-# Initialize Lambda^{-1}
-# Lambda_inv = deg * V
-
-# Specify Sum of X for the posterior function later
-# Specify Sum of X for the posterior function later
-# 1^T_n X part in the paper: identical to colSums but is a faster calculation
-# sumPsi = crossprod(Psi, rep(1,J+1)) 
-# Initialize first row of Theta
-# Theta[1,] = c(betavalues, tausquared)
-
-# Create Array to store values of bb_beta
-# bb_beta_array = array(data = NA, dim = c(iter,nrow(bb_beta),ncol(bb_beta)))
-# initialize first array with bb_beta value
-# bb_beta_array[1,,] = bb_beta
-
-# Create array to hold Lambda values
-# Lambda_array = array(data = NA, dim = c(iter, nrow(Lambda_inv), ncol(Lambda_inv)))
-# Initalize first array with Lambda value
-# Lambda_array[1,,] = Lambda_inv
-
-#####################
-# MCMC Algorithm
-#####################
-
-#Rprof()
-pb = progress_bar$new(total = iter - 1)
-t1 = Sys.time()
-for (g in 2:iter) {
-  pb$tick()
-  #g = 2
-  #########################
-  # tau^2 and lambda update
-  #########################
-  # Update \lambda and \tau with Gibbs Sampler
-  lambda = 1/rgamma(1, (nu+1)/2, nu/tausquared + etasq)
-  tausquared = 1/rgamma(1, (B + 1 + nu)/2, sum(betavalues[-1]^2 / D) / 2 + nu/lambda)
-  # Update Theta matrix with new tau squared value
-  Theta[g,B+2] = tausquared
-  # Update Sigma with new tau^2 value
-  Sigma = c(sigmasquare, D * tausquared)
-  
-  #####################
-  # beta update
-  #####################
-  # Update \beta with Gibbs Sampler
-  Lambda_solve = solve(diag(Sigma))
-  betavalues = c(rmvnorm(n = 1, mean = solve(Lambda_solve + R * Lambda_inv) %*% Lambda_inv %*% bb_beta %*% rep(1,R),
-                         sigma = solve(Lambda_solve + R * Lambda_inv)))
-  #save new betavalue
-  Theta[g, -(B+2)] = betavalues
-  
-  #####################
-  # Lambda^{-1} update
-  #####################
-  # Update \Lambda^{-1} with Gibbs Sampler
-  # obtain new Lambda_inv with Wishart distribution
-  Lambda_inv = rWishart(n = 1, df = deg + R, Sigma = solve(tcrossprod(bb_beta - tcrossprod(betavalues, rep(1,R))) + diag(B+1)))[,,1]
-  # save Lambda_inv 
-  Lambda_array[g,,] = Lambda_inv
-  
-  ######################
-  # bb_beta update :MH
-  ######################
-  # Update \mathbb{B} with Metropolis Hastings Sampler
-  for(r in 1:R){
-    #r = 1
-    br = bb_beta[,r]
-    # Maximum A Posteriori (MAP) estimate : finds the \beta that gives us the mode of the conditional posterior of \beta conditioned on y
-    map <- optim(par = br, fn = posterior_hierarch_Lambda, gr = gradient_hierarch_Lambda, method ="BFGS", control = list(fnscale = -1),
-                 Psi = Psi, sumPsi = sumPsi, y = perio[,r], b = betavalues, lambda = Lambda_inv)$par
-    # Call the hessian function
-    norm_precision <- he_hierarch_Lambda(br = map, Psi = Psi, y = perio[,r], lambda = Lambda_inv) * -1
-    # Calculate the \beta^* proposal, using Cholesky Sampling
-    betaprop <- Chol_sampling(Lt = chol(norm_precision), d = B + 1, beta_c = map)
-    # Calculate acceptance ratio
-    prop_ratio <- min(1, exp(posterior_hierarch_Lambda(br = betaprop, b = betavalues, Psi = Psi, sumPsi = sumPsi, y = perio[,r], lambda = Lambda_inv) -
-                               posterior_hierarch_Lambda(br = br, b = betavalues, Psi = Psi, sumPsi = sumPsi, y = perio[,r], lambda = Lambda_inv)))
-    # Create acceptance decision
-    accept <- runif(1)
-    if(accept < prop_ratio){
-      # Accept betaprop as new beta^(r)
-      bb_beta_array[g, ,r] <- betaprop
-    }else{
-      # Reject betaprop as new beta^(r)
-      bb_beta_array[g, ,r] <- br
-    }
-  }
-  
-}
-Sys.time() - t1
-# Rprof(NULL)
-# summaryRprof()
-
 
 #######################
 # Plots and Diagnostics
@@ -331,8 +162,8 @@ Sys.time() - t1
 burnin = 10
 Theta = Theta[-(1:burnin),]
 bb_beta_array = bb_beta_array[-(1:burnin),,]
-Lambda_array = Lambda_array[-(1:burnin),,]
-r = 5
+eta_br_array = eta_br_array[-(1:burnin),,]
+r = 8
 
 
 # Create spectral densities for the first series
@@ -343,11 +174,12 @@ plot(x =c(), y=c(), xlim = c(0,3), ylim = range(log(specdens)), ylab = "Spectral
 for(h in sample(ncol(specdens), 100, replace = FALSE)){
   lines(x = omega, y = log(specdens[,h]), col = rgb(0, 0, 0, 0.2))
 }
-lines(x = omega, y = log(arma_spec(omega = omega, theta = theta_vec[r])), col = "red", lwd = 2)
+lines(x = omega, y = log(arma_spec(omega = omega, theta = theta_true[r])), col = "red", lwd = 2)
+#abline(v = pi/4)
 legend("topright", col = c("black", "red"), lwd = c(1,2), legend = c("Estimate", "True"))
 
 
-theta_vec
+theta_true
 
 Lambda_array[900,,]
 
