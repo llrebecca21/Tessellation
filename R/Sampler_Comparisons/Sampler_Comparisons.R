@@ -56,13 +56,13 @@ for(r in 1:R){
   specdens_Single = exp(Psi %*% t(Result_Single$Theta[,-(B+2)]))
   plot(x =c(), y=c(), xlim = c(0,3), ylim = c(-2,2), ylab = "Spectral Density", xlab = "omega",
        main = "Spectral Density Estimates \nwith True Spectral Density")
-  for(h in sample(ncol(specdens_Wishart), 100, replace = FALSE)){
+  for(h in sample(ncol(specdens_Wishart), 100, replace = FALSE)){ #red
     lines(x = omega, y = log(specdens_Wishart[,h]), col = rgb(.88, .29, .19, 0.4))
   }
-  for(h in sample(ncol(specdens_Single), 100, replace = FALSE)){
+  for(h in sample(ncol(specdens_Single), 100, replace = FALSE)){ #yellow
     lines(x = omega, y = log(specdens_Single[,h]), col = rgb(1, .71, 0, 0.4))
   }
-  for(h in sample(ncol(specdens_eta_br), 100, replace = FALSE)){
+  for(h in sample(ncol(specdens_eta_br), 100, replace = FALSE)){ #blue
     lines(x = omega, y = log(specdens_eta_br[,h]), col = rgb(.39,.75,.94, 0.4))
   }
   lines(x = omega, y = log(arma_spec(omega = omega, phi = phi)), col = "black", lwd = 2)
@@ -124,24 +124,31 @@ Psi = outer(X = omega, Y = 0:B, FUN = function(x,y){sqrt(2)* cos(y * x)})
 # redefine the first column to be 1's
 Psi[,1] = 1
 
-
 # Plot the Spectral Density Estimates with True Spectral Density
 par(mfrow = c(2,4))
 for(r in 1:R){
   specdens_Wishart = exp(Psi %*% t(Result_Wishart$bb_beta_array[,,r]))
+  specdens_eta_br = exp(Psi %*% t(Result_eta_br$bb_beta_array[,,r]))
   Result_Single = Sampler_Single(timeseries = timeseries[,r, drop = FALSE], B = B)
   specdens_Single = exp(Psi %*% t(Result_Single$Theta[,-(B+2)]))
-  plot(x =c(), y=c(), xlim = c(0,3), ylim = c(-4,2), ylab = "Spectral Density", xlab = "omega",
+  plot(x =c(), y=c(), xlim = c(0,3), ylim = c(-2,2), ylab = "Spectral Density", xlab = "omega",
        main = "Spectral Density Estimates \nwith True Spectral Density")
   for(h in sample(ncol(specdens_Wishart), 100, replace = FALSE)){
-    lines(x = omega, y = log(specdens_Wishart[,h]), col = rgb(0, 1, 1, 0.2))
+    lines(x = omega, y = log(specdens_Wishart[,h]), col = rgb(.88, .29, .19, 0.4))
   }
   for(h in sample(ncol(specdens_Single), 100, replace = FALSE)){
-    lines(x = omega, y = log(specdens_Single[,h]), col = rgb(1, 0, 1, 0.2))
+    lines(x = omega, y = log(specdens_Single[,h]), col = rgb(1, .71, 0, 0.4))
+  }
+  for(h in sample(ncol(specdens_eta_br), 100, replace = FALSE)){
+    lines(x = omega, y = log(specdens_eta_br[,h]), col = rgb(.39,.75,.94, 0.4))
   }
   lines(x = omega, y = log(arma_spec(omega = omega, theta = theta_true[r])), col = "black", lwd = 2)
   #points(x = omega, y = log(Result_Wishart$perio[,r]), col = "green", lwd = 0.5)
-  legend("bottomleft", col = c("black", "cyan","magenta"), lwd = c(2,1,1), legend = c("True", "Wishart", "Single"))
+  legend("topright", col = c("black",rgb(.88, .29, .19, 1),
+                             rgb(1, .71, 0, 1),
+                             rgb(.39,.75,.94, 1)),
+         lwd = c(2,1,1,1),
+         legend = c("True", "Wishart", "Single", "eta_br"))
 }
 
 
@@ -150,15 +157,21 @@ for(r in 1:R){
 par(mfrow = c(2,4))
 for(r in 1:R){
   specdens_Wishart = exp(Psi %*% t(Result_Wishart$bb_beta_array[,,r]))
+  specdens_eta_br = exp(Psi %*% t(Result_eta_br$bb_beta_array[,,r]))
   Result_Single = Sampler_Single(timeseries = timeseries[,r, drop = FALSE], B = B)
   specdens_Single = exp(Psi %*% t(Result_Single$Theta[,-(B+2)]))
-  plot(x =c(), y=c(), xlim = c(0,3), ylim = c(-4,2), ylab = "Spectral Density", xlab = "omega",
+  plot(x =c(), y=c(), xlim = c(0,3), ylim = c(-2,2), ylab = "Spectral Density", xlab = "omega",
        main = "Spectral Density Estimates \nwith True Spectral Density")
-  lines(x = omega, y = rowMeans(log(specdens_Wishart)), col = rgb(0, 1, 1, 1))
-  lines(x = omega, y = rowMeans(log(specdens_Single)), col = rgb(1, 0, 1, 1))
+  lines(x = omega, y = rowMeans(log(specdens_Wishart)), col = rgb(.88, .29, .19, 1))
+  lines(x = omega, y = rowMeans(log(specdens_Single)), col = rgb(1, .71, 0, 1))
+  lines(x = omega, y = rowMeans(log(specdens_eta_br)), col = rgb(.39,.75,.94, 1))
   lines(x = omega, y = log(arma_spec(omega = omega, theta = theta_true[r])), col = "black", lwd = 2)
   #points(x = omega, y = log(Result_Wishart$perio[,r]), col = "green", lwd = 0.5)
-  legend("bottomleft", col = c("black", "cyan","magenta"), lwd = c(2,1,1), legend = c("True", "Wishart", "Single"))
+  legend("topright", col = c("black",rgb(.88, .29, .19, 1),
+                             rgb(1, .71, 0, 1),
+                             rgb(.39,.75,.94, 1)),
+         lwd = c(2,1,1,1),
+         legend = c("True", "Wishart", "Single", "eta_br"))
 }
 
 
