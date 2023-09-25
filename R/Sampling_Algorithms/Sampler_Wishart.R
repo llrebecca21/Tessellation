@@ -18,22 +18,10 @@ Sampler_Wishart = function(timeseries,  B = 10, iter = 1000, nu = 3, etasq = 1, 
   #################
   # MCMC parameters
   #################
-  # Define lambda for the half-t prior: \pi(\tau^2 | \lambda) and \pi(\lambda)
-  #lambda = 1
-  # Define degrees of freedom for half-t prior: \pi(\tau^2 | \lambda)
-  # Cauchy nu = 1
-  #nu = 3
-  # Define eta as the other scale parameter for half-t prior: \pi(\lambda)
-  # etasq = 1 gives standard Cauchy; higher eta gives wider Cauchy
-  # etasq = 1
-  
   # Define D's main diagonal : 
   # D is a measure of prior variance for \beta_1 through \beta_K
   # Rebecca's D
   D = 1 / (4 * pi * (1:B)^2)
-  
-  # prior variance for beta_0
-  #sigmasquare = 100
   
   # prior for Lambda : Wishart
   # degrees of freedom
@@ -46,8 +34,6 @@ Sampler_Wishart = function(timeseries,  B = 10, iter = 1000, nu = 3, etasq = 1, 
   #######################
   # Initialize parameters
   #######################
-  # set tau^2 value
-  # tausquared = 50
   # The new D matrix that houses the prior variance of \beta^* 
   Sigma = c(sigmasquare, D * tausquared)
   
