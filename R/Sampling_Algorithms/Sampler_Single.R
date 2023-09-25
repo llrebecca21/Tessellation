@@ -10,7 +10,6 @@ Sampler_Single = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, si
   J = floor((n-1) / 2)
   # Frequency (\omega_j): defined on [0, 2\pi)
   # for j = 0,...,n-1
-  # omega = (2 * pi * (0:(n-1)))/n
   omega = (2 * pi * (0:J)) / n
   
   # Define Periodogram
@@ -26,36 +25,13 @@ Sampler_Single = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, si
   #################
   # MCMC parameters
   #################
-  
-  # Define lambda for the half-t prior: \pi(\tau^2 | \lambda) and \pi(\lambda)
-  # lambda = 1
-  # Define degrees of freedom for half-t prior: \pi(\tau^2 | \lambda)
-  # Cauchy nu = 1
-  #nu = 3
-  # Define eta as the other scale parameter for half-t prior: \pi(\lambda)
-  # etasq = 1 gives standard Cauchy; higher eta gives wider Cauchy
-  #etasq = 1
-  
-  # Define D's main diagonal : Choose either identity or Rebecca's D (variation of Yakun's D)
-  # D is a measure of prior variance for \beta_1 through \beta_K
-  
-  # Identity D:
-  # D = rep(1, B)
-  
+
   # Rebecca's D
   D = 1 / (4 * pi * (1:B)^2)
-  
-  # exponential decay D
-  # D = exp(0.12 * -(0:(B-1)))
-  
-  # prior variance for beta_0
-  #sigmasquare = 100
   
   #######################
   # Initialize parameters
   #######################
-  # set tau^2 value
-  #tausquared = 1
   # The new D matrix that houses the prior variance of \beta^* 
   Sigma = c(sigmasquare, D * tausquared)
   
@@ -69,11 +45,7 @@ Sampler_Single = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, si
   Psi = outer(X = omega, Y = 0:B, FUN = function(x,y){sqrt(2)* cos(y * x)})
   # redefine the first column to be 1's
   Psi[,1] = 1
-  # not orthogonal because we are not evaluating the periodogram at the full n-1 values.
-  # Initialize beta using least squares solution
-  # Using the full data n-1 for periodogram can use this to initialize beta:
-  #betavalues = c(crossprod(Psi,log(y_bar))) / n
-  
+
   # Using J amount of data for periodogram, can initialize beta this way:
   betavalues = solve(crossprod(Psi), crossprod(Psi, log(y_bar)))
   
