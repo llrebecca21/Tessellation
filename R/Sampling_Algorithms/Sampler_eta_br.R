@@ -8,11 +8,6 @@ Sampler_eta_br = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, ta
   # Frequency (\omega_j): defined on [0, 2\pi)
   omega = (2 * pi * (0:J)) / n
   
-  # generate data
-  #gendata = generate_Krafty(n = n, R = R)
-  #timeseries = gendata$matrix_timeseries
-  #theta_true = gendata$theta_true
-  
   # Define Periodogram
   # Define y_n(\omega_j) for the posterior function below
   perio = (abs(mvfft(timeseries)) ^ 2 / n)
