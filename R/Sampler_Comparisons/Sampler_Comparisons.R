@@ -30,12 +30,6 @@ Result_Wishart = Sampler_Wishart(timeseries = timeseries, B = B, tausquared = 1)
 # run the Sampler_eta_br function
 Result_eta_br = Sampler_eta_br(timeseries = timeseries, B = B, tausquared = 1)
 
-#plot(Result_Wishart$Theta[,4], type = "l")
-#plot(Result_Single$Theta[,2], type = "l")
-#image(apply(Result_Wishart$Lambda_array, c(2, 3),mean))
-#round(apply(Result_Wishart$Lambda_array, c(2, 3),mean), 4)
-#abline(h = 0)
-
 # Plot the results below
 # Define omega and Psi for plotting purposes
 J = floor((n-1) / 2)
