@@ -1,4 +1,4 @@
-#' Function that runs the sampling algorithm for the eta_br mode
+#' Function that runs the sampling algorithm for the eta_br model
 #'
 #' @param timeseries : time series matrix
 #' @param B : Number of basis coefficients (excluding the intercept)
