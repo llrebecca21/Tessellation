@@ -7,9 +7,9 @@ library(ggplot2)
 source("R/General_Functions/Chol_sampling.R")
 source("R/General_Functions/arma_spec.R")
 source("R/Data_Generation/data_generation.R")
-source("R/Model_eta_br/gradient_eta_r.R")
-source("R/Model_eta_br/he_eta_r.R")
-source("R/Model_eta_br/posterior_eta_r.R")
+source("R/Model_eta_r/gradient_eta_r.R")
+source("R/Model_eta_r/he_eta_r.R")
+source("R/Model_eta_r/posterior_eta_r.R")
 # Set outer parameters for simulations
 n = 1000 #time series length
 iter = 1000
@@ -83,11 +83,11 @@ bb_beta_array = array(data = NA, dim = c(iter,nrow(bb_beta),ncol(bb_beta)))
 # initialize first array with bb_beta value
 bb_beta_array[1,,] = bb_beta
 # initialize starting value of eta_br
-eta_br = rep(1, length = R)
+eta = rep(1, length = R)
 # Create Array to store eta_br values
-eta_br_array = array(data = NA, dim = c(iter,ncol(bb_beta)))
+eta_array = array(data = NA, dim = c(iter,ncol(bb_beta)))
 # Initialize eta_br values
-eta_br_array[1,] = eta_br
+eta_array[1,] = eta
 
 #####################
 # MCMC Algorithm
@@ -104,7 +104,7 @@ for (g in 2:iter) {
   ###############################################
   # Update \lambda and \tau with Gibbs Sampler
   lambda = 1/rgamma(1, (nu+1)/2, nu/tausquared + etasq)
-  tausquared = 1/rgamma(1, (nu + B * R)/2, sum(rowSums(bb_beta^2 * eta_br)[-1] / D)/2 + nu/lambda)
+  tausquared = 1/rgamma(1, (nu + B * R)/2, sum(rowSums(bb_beta^2 * tcrossprod(rep(1,B+1),eta))[-1] / D)/2 + nu/lambda)
   # Update Theta matrix with new tau squared value
   Theta[g,B+2] = tausquared
   # Update Sigma with new tau^2 value
@@ -112,15 +112,13 @@ for (g in 2:iter) {
   #######################################
   # Sample \eta_b^r using slicing method
   #######################################
-  rate = c(bb_beta * bb_beta / (2 * Sigma))
-  p = R * (B + 1)
-  u = runif(p)/(1 + c(eta_br))
-  q = runif(p)*(pgamma(rate/u^2, shape = 1))
-  eta_br = qgamma(q, shape = 1)/rate
-  # reconstruct shape
-  eta_br = matrix(eta_br, nrow = B + 1 , ncol = R)
+  
+  rate = colSums(bb_beta * bb_beta / (2 * Sigma))
+  u = runif(R)/(1 + eta)
+  q = runif(R)*(pgamma(rate/u^2, shape = (B + 1)/2))
+  eta = qgamma(q, shape = (B + 1)/2)/rate
   # put eta_br into array for storage
-  eta_br_array[g,,] = eta_br
+  eta_array[g,] = eta
   
   ######################
   # bb_beta update :MH
@@ -129,17 +127,17 @@ for (g in 2:iter) {
   for(r in 1:R){
     #r = 1
     br = bb_beta[,r]
-    eta_r = eta_br[,r]
+    eta_r = eta[r]
     # Maximum A Posteriori (MAP) estimate : finds the \beta that gives us the mode of the conditional posterior of \beta conditioned on y
-    map = optim(par = br, fn = posterior_eta_br, gr = gradient_eta_br, method ="BFGS", control = list(fnscale = -1),
+    map = optim(par = br, fn = posterior_eta_r, gr = gradient_eta_r, method ="BFGS", control = list(fnscale = -1),
                 Psi = Psi, sumPsi = sumPsi, y = perio[,r], Sigma = Sigma, eta_r = eta_r)$par
     # Call the hessian function
-    norm_precision = he_eta_br(br = map, Psi = Psi, y = perio[,r], Sigma = Sigma, eta_r = eta_r) * -1
+    norm_precision = he_eta_r(br = map, Psi = Psi, y = perio[,r], Sigma = Sigma, eta_r = eta_r) * -1
     # Calculate the \beta^* proposal, using Cholesky Sampling
     betaprop = Chol_sampling(Lt = chol(norm_precision), d = B + 1, beta_c = map)
     # Calculate acceptance ratio
-    prop_ratio = min(1, exp(posterior_eta_br(br = betaprop,  Psi = Psi, sumPsi = sumPsi, y = perio[,r], eta_r = eta_r, Sigma = Sigma) -
-                              posterior_eta_br(br = br, Psi = Psi, sumPsi = sumPsi, y = perio[,r], eta_r = eta_r, Sigma = Sigma)))
+    prop_ratio = min(1, exp(posterior_eta_r(br = betaprop,  Psi = Psi, sumPsi = sumPsi, y = perio[,r], eta_r = eta_r, Sigma = Sigma) -
+                              posterior_eta_r(br = br, Psi = Psi, sumPsi = sumPsi, y = perio[,r], eta_r = eta_r, Sigma = Sigma)))
     # Create acceptance decision
     accept <- runif(1)
     if(accept < prop_ratio){
@@ -162,7 +160,7 @@ Sys.time() - t1
 burnin = 10
 Theta = Theta[-(1:burnin),]
 bb_beta_array = bb_beta_array[-(1:burnin),,]
-eta_br_array = eta_br_array[-(1:burnin),,]
+eta_array = eta_array[-(1:burnin),]
 r = 8
 
 
