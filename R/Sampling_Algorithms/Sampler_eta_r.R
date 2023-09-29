@@ -1,3 +1,17 @@
+#' Function that runs the sampling algorithm for the eta_r model
+#'
+#' @param timeseries : time series matrix
+#' @param B : Number of basis coefficients (excluding the intercept)
+#' @param iter : Number of iterations the mcmc algorithm will run
+#' @param nu : hyper-parameter for 1/2 t distribution
+#' @param etasq : hyper-parameter for 1/2 t distribution
+#' @param tausquared : initialization for tau^2
+#' @param lambda : initialization for lambda
+#'
+#' @return
+#' @export
+#'
+#' @examples
 Sampler_eta_r = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, tausquared = 1, lambda = 1){
   # Set outer parameters for simulations
   # extract n and R from timeseries
