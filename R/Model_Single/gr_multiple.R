@@ -12,7 +12,7 @@
 #' @export
 #'
 #' @examples
-gr_multiple <- function(b, Psi, sumPsi, tsq, y_bar, D, R){
+gr_multiple <- function(b, Psi, sumPsi, y_bar, D, R){
   # derivative of log of the whittle_post with respect to beta (vector)
-  derivbeta = -R * ((b / D) / R + sumPsi - colSums(Psi * c(y_bar / exp(Psi %*% b))))
+  return(-R * ((b / D) / R + sumPsi - colSums(Psi * c(y_bar / exp(Psi %*% b)))))
 }
