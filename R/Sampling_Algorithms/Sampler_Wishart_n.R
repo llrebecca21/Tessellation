@@ -9,13 +9,7 @@ Sampler_Wishart_n = function(timeseries,  B = 10, iter = 1000, nu = 3, etasq = 1
   # highest little j index value for the frequencies
   J = floor((n-1) / 2)
   # Frequency (\omega_j): defined on [0, 2\pi)
-  omega = (2 * pi * (0:J)) / n
-  
-  # Define Periodogram
-  # Define y_n(\omega_j) for the posterior function below
-  perio = (abs(mvfft(timeseries)) ^ 2 / n)
-  # subset perio for unique values, J = ceil((n-1) / 2) 
-  perio = perio[(0:J) + 1, , drop=FALSE]
+  #omega = (2 * pi * (0:J)) / n_len
   
   #################
   # MCMC parameters
@@ -43,30 +37,48 @@ Sampler_Wishart_n = function(timeseries,  B = 10, iter = 1000, nu = 3, etasq = 1
   # ncol: number of parameters (beta^*, tau^2)
   # dim : (iter) x (B + 2)
   Theta = matrix(NA, nrow = iter, ncol = B + 2)
+  # initialize perio as a list
+  perio_list = vector(mode = "list", length = R)
+  # initialize Psi as a list
+  Psi_list = vector(mode = "list", length = R)
+  # initialize beta_values
+  betavalues = matrix(data = NA, nrow = B + 1, ncol = R)
+  # initialize sumPsi
+  sumPsi = matrix(data = NA, nrow = B + 1, ncol = R)
   
-  # Create matrix of the basis functions
-  # fix fourier frequencies
-  Psi = outer(X = omega, Y = 0:B, FUN = function(x,y){sqrt(2)* cos(y * x)})
-  # redefine the first column to be 1's
-  Psi[,1] = 1
-  
-  # not orthogonal because we are not evaluating the periodogram at the full n-1 values.
-  # Initialize beta using least squares solution
-  # Using J amount of data for periodogram, can initialize beta this way:
-  betavalues = solve(crossprod(Psi), crossprod(Psi, log(rowMeans(perio))))
+  # Define Periodogram and Psi
+  for(r in 1:R){
+    #r = 1
+    # Define y_n(\omega_j) for the posterior function below
+    perio_list[[r]] = (abs(fft(ts_list[[r]])) ^ 2 / n_len[r])
+    
+    # subset perio for unique values, J = ceil((n-1) / 2) 
+    perio_list[[r]] = perio_list[[r]][(0:J[r]) + 1, , drop = FALSE]
+    
+    # Create matrix of the basis functions
+    # fix fourier frequencies
+    Psi_list[[r]] = outer(X = (2 * pi * (0:J[r])) / n_len[r], Y = 0:B, FUN = function(x,y){sqrt(2)* cos(y * x)})
+    # redefine the first column to be 1's
+    Psi_list[[r]][,1] = 1
+    
+    # Using J amount of data for periodogram, can initialize beta this way:
+    betavalues[,r] = solve(crossprod(Psi_list[[r]]), crossprod(Psi_list[[r]], log(perio_list[[r]])))
+    
+    # Specify Sum of X for the posterior function later
+    # Specify Sum of X for the posterior function later
+    # 1^T_n X part in the paper: identical to colSums but is a faster calculation
+    sumPsi[,r] = c(crossprod(rep(1, nrow(Psi_list[[r]])), Psi_list[[r]]))
+  }
+  betavalues = rowMeans(betavalues)
   
   # Initialize bb_beta at the mean for the prior of bb_beta
   bb_beta = tcrossprod(betavalues, rep(1,R))
   
-  # Initialize Lambda^{-1}
-  Lambda_inv = deg * V
-  
-  # Specify Sum of X for the posterior function later
-  # Specify Sum of X for the posterior function later
-  # 1^T_n X part in the paper: identical to colSums but is a faster calculation
-  sumPsi = crossprod(Psi, rep(1,J+1)) 
   # Initialize first row of Theta
   Theta[1,] = c(betavalues, tausquared)
+  
+  # Initialize Lambda^{-1}
+  Lambda_inv = deg * V
   
   # Create Array to store values of bb_beta
   bb_beta_array = array(data = NA, dim = c(iter,nrow(bb_beta),ncol(bb_beta)))
@@ -123,14 +135,14 @@ Sampler_Wishart_n = function(timeseries,  B = 10, iter = 1000, nu = 3, etasq = 1
       br = bb_beta[,r]
       # Maximum A Posteriori (MAP) estimate : finds the \beta that gives us the mode of the conditional posterior of \beta conditioned on y
       map <- optim(par = br, fn = posterior_hierarch_Lambda, gr = gradient_hierarch_Lambda, method ="BFGS", control = list(fnscale = -1),
-                   Psi = Psi, sumPsi = sumPsi, y = perio[,r], b = betavalues, lambda = Lambda_inv)$par
+                   Psi = Psi_list[[r]], sumPsi = sumPsi, y = perio_list[[r]], b = betavalues, lambda = Lambda_inv)$par
       # Call the hessian function
-      norm_precision <- he_hierarch_Lambda(br = map, Psi = Psi, y = perio[,r], lambda = Lambda_inv) * -1
+      norm_precision <- he_hierarch_Lambda(br = map, Psi = Psi_list[[r]], y = perio_list[[r]], lambda = Lambda_inv) * -1
       # Calculate the \beta^* proposal, using Cholesky Sampling
       betaprop <- Chol_sampling(Lt = chol(norm_precision), d = B + 1, beta_c = map)
       # Calculate acceptance ratio
-      prop_ratio <- min(1, exp(posterior_hierarch_Lambda(br = betaprop, b = betavalues, Psi = Psi, sumPsi = sumPsi, y = perio[,r], lambda = Lambda_inv) -
-                                 posterior_hierarch_Lambda(br = br, b = betavalues, Psi = Psi, sumPsi = sumPsi, y = perio[,r], lambda = Lambda_inv)))
+      prop_ratio <- min(1, exp(posterior_hierarch_Lambda(br = betaprop, b = betavalues, Psi = Psi_list[[r]], sumPsi = sumPsi, y = perio_list[[r]], lambda = Lambda_inv) -
+                                 posterior_hierarch_Lambda(br = br, b = betavalues, Psi = Psi_list[[r]], sumPsi = sumPsi, y = perio_list[[r]], lambda = Lambda_inv)))
       # Create acceptance decision
       accept <- runif(1)
       if(accept < prop_ratio){
