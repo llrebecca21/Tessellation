@@ -1,4 +1,4 @@
-Sampler_Wishart_n = function(timeseries,  B = 10, iter = 1000, nu = 3, etasq = 1, sigmasquare = 100, tausquared = 1, lambda = 1, V = NULL){
+Sampler_Wishart_n = function(ts_list,  B = 10, iter = 1000, nu = 3, etasq = 1, sigmasquare = 100, tausquared = 1, lambda = 1, V = NULL){
   
   # extract n and R from timeseries
   # extract the length of each replicate timeseries and store as a vector
@@ -7,7 +7,7 @@ Sampler_Wishart_n = function(timeseries,  B = 10, iter = 1000, nu = 3, etasq = 1
   R = length(n_len)
   
   # highest little j index value for the frequencies
-  J = floor((n-1) / 2)
+  J = floor((n_len-1) / 2)
   # Frequency (\omega_j): defined on [0, 2\pi)
   #omega = (2 * pi * (0:J)) / n_len
   
