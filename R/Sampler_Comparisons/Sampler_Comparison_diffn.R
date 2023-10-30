@@ -28,6 +28,7 @@ source("R/Sampling_Algorithms/Sampler_eta_r.R")
 source("R/Sampling_Algorithms/Sampler_Single_n.R")
 source("R/Sampling_Algorithms/Sampler_Wishart_n.R")
 source("R/Sampling_Algorithms/Sampler_eta_r_n.R")
+source("R/Sampling_Algorithms/Sampler_eta_br_n.R")
 # First run with AR(p) data generating function as the input for both Samplers
 phi = 0.5
 R = 8
@@ -55,11 +56,15 @@ list_n
 # run the Sampler_eta_br function
 # Result_eta_br = Sampler_eta_br(timeseries = timeseries, B = B, tausquared = 1)
 
+# run the Sampler_eta_br_n function
+Result_eta_br_n = Sampler_eta_br_n(ts_list = ts_list, B = B, tausquared = 1)
+
+
 # run the Sampler_eta_r function
 # Result_eta_r = Sampler_eta_r(timeseries = timeseries, B = B, tausquared = 1)
 
-# run the Sampler_eta_r function
-Result_eta_r_n = Sampler_eta_r_n(ts_list = ts_list, B = B, tausquared = 1)
+# run the Sampler_eta_r_n function
+# Result_eta_r_n = Sampler_eta_r_n(ts_list = ts_list, B = B, tausquared = 1)
 
 
 # run the Sampler_single_n function
@@ -86,8 +91,9 @@ par(mfrow = c(2,4), mar = c(4,4,3,0.1)+0.1)
 for(r in 1:R){
   #specdens_Wishart = exp(Psi %*% t(Result_Wishart$bb_beta_array[,,r]))
   #specdens_eta_br = exp(Psi %*% t(Result_eta_br$bb_beta_array[,,r]))
+  specdens_eta_br_n = exp(Psi %*% t(Result_eta_br_n$bb_beta_array[,,r]))
   #specdens_eta_r = exp(Psi %*% t(Result_eta_r$bb_beta_array[,,r]))
-  specdens_eta_r_n = exp(Psi %*% t(Result_eta_r_n$bb_beta_array[,,r]))
+  #specdens_eta_r_n = exp(Psi %*% t(Result_eta_r_n$bb_beta_array[,,r]))
   #Result_Single = Sampler_Single(timeseries = ts_list[[r]], B = B)
   #specdens_Single = exp(Psi %*% t(Result_Single$Theta[,-(B+2)]))
   #Result_Single_n = Sampler_Single_n(ts_list = list(ts_list[[r]]), B = B)
@@ -116,13 +122,17 @@ for(r in 1:R){
   #   lines(x = omega, y = log(specdens_eta_r[,h]), col = rgb(.65, .85, .62, 0.4))
   # }
   # Plot Model eta_r
-  for(h in sample(ncol(specdens_eta_r_n), 100, replace = FALSE)){ #light green
-    lines(x = omega, y = log(specdens_eta_r_n[,h]), col = rgb(.65, .85, .62, 0.4))
-  }
-  # # Plot Model eta_br
+  # for(h in sample(ncol(specdens_eta_r_n), 100, replace = FALSE)){ #light green
+  #   lines(x = omega, y = log(specdens_eta_r_n[,h]), col = rgb(.65, .85, .62, 0.4))
+  # }
+  # Plot Model eta_br
   # for(h in sample(ncol(specdens_eta_br), 100, replace = FALSE)){ #dark green
   #   lines(x = omega, y = log(specdens_eta_br[,h]), col = rgb(0, .53, .21, 0.4))
   # }
+  # Plot Model eta_br_n
+  for(h in sample(ncol(specdens_eta_br_n), 100, replace = FALSE)){ #dark green
+    lines(x = omega, y = log(specdens_eta_br_n[,h]), col = rgb(0, .53, .21, 0.4))
+  }
   lines(x = omega, y = log(arma_spec(omega = omega, phi = phi)), col = "black", lwd = 2)
   #points(x = omega, y = log(Result_Wishart$perio[,r]), col = "green", lwd = 0.5)
   legend("topright", col = c("black",
