@@ -63,6 +63,7 @@ Sampler_Wishart = function(timeseries,  B = 10, iter = 1000, nu = 3, etasq = 1, 
   # Specify Sum of X for the posterior function later
   # 1^T_n X part in the paper: identical to colSums but is a faster calculation
   sumPsi = crossprod(Psi, rep(1,J+1)) 
+  # return(sumPsi)
   # Initialize first row of Theta
   Theta[1,] = c(betavalues, tausquared)
   
