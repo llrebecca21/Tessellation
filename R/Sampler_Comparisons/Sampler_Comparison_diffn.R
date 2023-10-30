@@ -1,6 +1,5 @@
 # Sampler Comparison different lengths of n for each replicate time series
 
-
 # Run a comparison between the different sampling algorithms and plot their mean spectral density on the same plot.
 set.seed(105)
 par(mfrow = c(2,4))
@@ -27,22 +26,28 @@ source("R/Sampling_Algorithms/Sampler_Single.R")
 source("R/Sampling_Algorithms/Sampler_eta_br.R")
 source("R/Sampling_Algorithms/Sampler_eta_r.R")
 source("R/Sampling_Algorithms/Sampler_Single_n.R")
+source("R/Sampling_Algorithms/Sampler_Wishart_n.R")
+source("R/Sampling_Algorithms/Sampler_eta_r_n.R")
 # First run with AR(p) data generating function as the input for both Samplers
 phi = 0.5
 R = 8
 B = 10
-avg_n = 1000
+avg_n = 750
+
 
 # Initialize a list to store each time series of length "n"
 ts_list = vector(mode = "list", length = R)
 for(r in 1:R){
-  n = rpois(n = 1, lambda = avg_n)
+  # n = rpois(n = 1, lambda = avg_n)
+  n = sample(500:1000, 1)
+  #n = avg_n
   ts_list[[r]] = generate_adapt(phi = phi, n = n, R = 1)$matrix_timeseries
 }
 
 list_n = sapply(ts_list, nrow)
+timeseries = matrix(unlist(ts_list), ncol = R)
 
-
+list_n
 
 # run the Sampler_Wishart function
 # Result_Wishart = Sampler_Wishart(timeseries = timeseries, B = B, tausquared = 1)
@@ -53,8 +58,16 @@ list_n = sapply(ts_list, nrow)
 # run the Sampler_eta_r function
 # Result_eta_r = Sampler_eta_r(timeseries = timeseries, B = B, tausquared = 1)
 
+# run the Sampler_eta_r function
+Result_eta_r_n = Sampler_eta_r_n(ts_list = ts_list, B = B, tausquared = 1)
+
+
 # run the Sampler_single_n function
-Result_Single_n = Sampler_Single_n(ts_list = ts_list, B = B)
+# Result_Single_n = Sampler_Single_n(ts_list = ts_list, B = B)
+
+# run the Sampler_Wishart_n function
+#Result_Wishart_n = Sampler_Wishart_n(ts_list = ts_list, B = B, tausquared = 1)
+
 
 # Plot the results below
 # Define omega and Psi for plotting purposes
@@ -74,28 +87,38 @@ for(r in 1:R){
   #specdens_Wishart = exp(Psi %*% t(Result_Wishart$bb_beta_array[,,r]))
   #specdens_eta_br = exp(Psi %*% t(Result_eta_br$bb_beta_array[,,r]))
   #specdens_eta_r = exp(Psi %*% t(Result_eta_r$bb_beta_array[,,r]))
-  Result_Single = Sampler_Single(timeseries = ts_list[[r]], B = B)
-  specdens_Single = exp(Psi %*% t(Result_Single$Theta[,-(B+2)]))
+  specdens_eta_r_n = exp(Psi %*% t(Result_eta_r_n$bb_beta_array[,,r]))
+  #Result_Single = Sampler_Single(timeseries = ts_list[[r]], B = B)
+  #specdens_Single = exp(Psi %*% t(Result_Single$Theta[,-(B+2)]))
   #Result_Single_n = Sampler_Single_n(ts_list = list(ts_list[[r]]), B = B)
-  specdens_Single_n = exp(Psi %*% t(Result_Single_n$Theta[,-(B+2)]))
+  #specdens_Single_n = exp(Psi %*% t(Result_Single_n$Theta[,-(B+2)]))
+  #specdens_Wishart_n = exp(Psi %*% t(Result_Wishart_n$bb_beta_array[,,r]))
   plot(x =c(), y=c(), xlim = c(0,3), ylim = c(-2,2), ylab = "Spectral Density", xlab = "omega",
        main = "Spectral Density Estimates \nwith True Spectral Density")
   # Plot Model Single
-  for(h in sample(ncol(specdens_Single), 100, replace = FALSE)){ #light purple
-    lines(x = omega, y = log(specdens_Single[,h]), col = rgb(.76, .65, .81, 0.4))
-  }
+  # for(h in sample(ncol(specdens_Single), 100, replace = FALSE)){ #light purple
+  #   lines(x = omega, y = log(specdens_Single[,h]), col = rgb(.76, .65, .81, 0.4))
+  # }
   # Plot Model Single n
-  for(h in sample(ncol(specdens_Single_n), 100, replace = FALSE)){ #light purple
-    lines(x = omega, y = log(specdens_Single_n[,h]), col = rgb(.48, .19, .58, 0.4))
-  }
+  # for(h in sample(ncol(specdens_Single_n), 100, replace = FALSE)){ #light purple
+  #   lines(x = omega, y = log(specdens_Single_n[,h]), col = rgb(.48, .19, .58, 0.4))
+  # }
   # # Plot Model Wishart
   # for(h in sample(ncol(specdens_Wishart), 100, replace = FALSE)){ #dark purple
   #   lines(x = omega, y = log(specdens_Wishart[,h]), col = rgb(.48, .19, .58, 0.4))
+  # }
+  # Plot Model Wishart n
+  # for(h in sample(ncol(specdens_Wishart_n), 100, replace = FALSE)){ #light green
+  #   lines(x = omega, y = log(specdens_Wishart_n[,h]), col = rgb(.65, .85, .62, 0.4))
   # }
   # # Plot Model eta_r
   # for(h in sample(ncol(specdens_eta_r), 100, replace = FALSE)){ #light green
   #   lines(x = omega, y = log(specdens_eta_r[,h]), col = rgb(.65, .85, .62, 0.4))
   # }
+  # Plot Model eta_r
+  for(h in sample(ncol(specdens_eta_r_n), 100, replace = FALSE)){ #light green
+    lines(x = omega, y = log(specdens_eta_r_n[,h]), col = rgb(.65, .85, .62, 0.4))
+  }
   # # Plot Model eta_br
   # for(h in sample(ncol(specdens_eta_br), 100, replace = FALSE)){ #dark green
   #   lines(x = omega, y = log(specdens_eta_br[,h]), col = rgb(0, .53, .21, 0.4))
