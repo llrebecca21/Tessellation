@@ -67,8 +67,10 @@ Sampler_Wishart_n = function(ts_list,  B = 10, iter = 1000, nu = 3, etasq = 1, s
     # Specify Sum of X for the posterior function later
     # Specify Sum of X for the posterior function later
     # 1^T_n X part in the paper: identical to colSums but is a faster calculation
-    sumPsi[,r] = c(crossprod(rep(1, nrow(Psi_list[[r]])), Psi_list[[r]]))
+    #sumPsi[,r] = c(crossprod(rep(1, nrow(Psi_list[[r]])), Psi_list[[r]]))
+    sumPsi[,r] = crossprod(Psi_list[[r]], rep(1,J[r]+1)) 
   }
+  #return(sumPsi)
   betavalues = rowMeans(betavalues)
   
   # Initialize bb_beta at the mean for the prior of bb_beta
@@ -135,14 +137,14 @@ Sampler_Wishart_n = function(ts_list,  B = 10, iter = 1000, nu = 3, etasq = 1, s
       br = bb_beta[,r]
       # Maximum A Posteriori (MAP) estimate : finds the \beta that gives us the mode of the conditional posterior of \beta conditioned on y
       map <- optim(par = br, fn = posterior_hierarch_Lambda, gr = gradient_hierarch_Lambda, method ="BFGS", control = list(fnscale = -1),
-                   Psi = Psi_list[[r]], sumPsi = sumPsi, y = perio_list[[r]], b = betavalues, lambda = Lambda_inv)$par
+                   Psi = Psi_list[[r]], sumPsi = sumPsi[,r, drop = FALSE], y = perio_list[[r]], b = betavalues, lambda = Lambda_inv)$par
       # Call the hessian function
       norm_precision <- he_hierarch_Lambda(br = map, Psi = Psi_list[[r]], y = perio_list[[r]], lambda = Lambda_inv) * -1
       # Calculate the \beta^* proposal, using Cholesky Sampling
       betaprop <- Chol_sampling(Lt = chol(norm_precision), d = B + 1, beta_c = map)
       # Calculate acceptance ratio
-      prop_ratio <- min(1, exp(posterior_hierarch_Lambda(br = betaprop, b = betavalues, Psi = Psi_list[[r]], sumPsi = sumPsi, y = perio_list[[r]], lambda = Lambda_inv) -
-                                 posterior_hierarch_Lambda(br = br, b = betavalues, Psi = Psi_list[[r]], sumPsi = sumPsi, y = perio_list[[r]], lambda = Lambda_inv)))
+      prop_ratio <- min(1, exp(posterior_hierarch_Lambda(br = betaprop, b = betavalues, Psi = Psi_list[[r]], sumPsi = sumPsi[,r, drop = FALSE], y = perio_list[[r]], lambda = Lambda_inv) -
+                                 posterior_hierarch_Lambda(br = br, b = betavalues, Psi = Psi_list[[r]], sumPsi = sumPsi[,r, drop = FALSE], y = perio_list[[r]], lambda = Lambda_inv)))
       # Create acceptance decision
       accept <- runif(1)
       if(accept < prop_ratio){
@@ -156,6 +158,6 @@ Sampler_Wishart_n = function(ts_list,  B = 10, iter = 1000, nu = 3, etasq = 1, s
     
   }
   
-  return(list("bb_beta_array" = bb_beta_array, "Lambda_array" = Lambda_array, "Theta" = Theta, "perio" = perio))
+  return(list("bb_beta_array" = bb_beta_array, "Lambda_array" = Lambda_array, "Theta" = Theta, "perio_list" = perio_list))
   
 }
