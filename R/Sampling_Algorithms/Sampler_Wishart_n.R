@@ -114,7 +114,7 @@ Sampler_Wishart_n = function(ts_list,  B = 10, iter = 1000, nu = 3, etasq = 1, s
     #####################
     # Update \beta with Gibbs Sampler
     Lambda_solve = solve(diag(Sigma))
-    betavalues = c(rmvnorm(n = 1, mean = solve(Lambda_solve + R * Lambda_inv) %*% Lambda_inv %*% bb_beta %*% rep(1,R),
+    betavalues = c(mvtnorm::rmvnorm(n = 1, mean = solve(Lambda_solve + R * Lambda_inv) %*% Lambda_inv %*% bb_beta %*% rep(1,R),
                            sigma = solve(Lambda_solve + R * Lambda_inv)))
     #save new betavalue
     Theta[g, -(B+2)] = betavalues
