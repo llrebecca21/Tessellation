@@ -21,12 +21,23 @@ source("R/Sampling_Algorithms/Sampler_Single.R")
 source("R/Sampling_Algorithms/Sampler_eta_br.R")
 source("R/Sampling_Algorithms/Sampler_eta_r.R")
 # First run with AR(p) data generating function as the input for both Samplers
-phi = 0.5
+# phi = 0.5
 R = 8
-B = 10
+B = 15
 n = 1000
-gendata = generate_adapt(phi = phi, n = n, R = R)
-timeseries = gendata$matrix_timeseries
+#gendata = generate_adapt(phi = phi, n = n, R = R)
+#timeseries = gendata$matrix_timeseries
+
+peaks1 <- runif(R, min = 0.19, max = 0.21)
+bandwidths1 <- rep(0.04, R)
+peaks2 <- runif(R, min = (pi / 4) - 0.01, max = (pi/4) + 0.01)
+bandwidths2 <- rep(0.03, R)
+
+gendata1 = generate_ar2_peak(peaks = peaks1, bandwidths = bandwidths1, n = n)
+gendata2 = generate_ar2_peak(peaks = peaks2, bandwidths = bandwidths2, n = n)
+timeseries = gendata1$matrix_timeseries + gendata2$matrix_timeseries
+ts.plot(timeseries[,1])
+
 
 # run the Sampler_Single function
 #Result_Single = Sampler_Single(timeseries = timeseries, B = B)
@@ -59,7 +70,7 @@ for(r in 1:R){
   specdens_eta_r = exp(Psi %*% t(Result_eta_r$bb_beta_array[,,r]))
   Result_Single = Sampler_Single(timeseries = timeseries[,r, drop = FALSE], B = B)
   specdens_Single = exp(Psi %*% t(Result_Single$Theta[,-(B+2)]))
-  plot(x =c(), y=c(), xlim = c(0,3), ylim = c(-2,2), ylab = "Spectral Density", xlab = "omega",
+  plot(x =c(), y=c(), xlim = c(0,3), ylim = c(-2,10), ylab = "Spectral Density", xlab = "omega",
        main = "Spectral Density Estimates \nwith True Spectral Density")
   # Plot Model Single
   for(h in sample(ncol(specdens_Single), 100, replace = FALSE)){ #light purple
@@ -77,7 +88,7 @@ for(r in 1:R){
   for(h in sample(ncol(specdens_eta_br), 100, replace = FALSE)){ #dark green
     lines(x = omega, y = log(specdens_eta_br[,h]), col = rgb(0, .53, .21, 0.4))
   }
-  lines(x = omega, y = log(arma_spec(omega = omega, phi = phi)), col = "black", lwd = 2)
+  lines(x = omega, y = log(arma_spec(omega = omega, phi = gendata1$phi[,r]) + arma_spec(omega = omega, phi = gendata2$phi[,r])), col = "black", lwd = 2)
   #points(x = omega, y = log(Result_Wishart$perio[,r]), col = "green", lwd = 0.5)
   legend("topright", col = c("black",
                              #Single
@@ -101,13 +112,14 @@ for(r in 1:R){
   specdens_eta_r = exp(Psi %*% t(Result_eta_r$bb_beta_array[,,r]))
   Result_Single = Sampler_Single(timeseries = timeseries[,r, drop = FALSE], B = B)
   specdens_Single = exp(Psi %*% t(Result_Single$Theta[,-(B+2)]))
-  plot(x =c(), y=c(), xlim = c(0,3), ylim = c(-1.5,2), ylab = "Spectral Density", xlab = "omega",
+  plot(x =c(), y=c(), xlim = c(0,3), ylim = c(-2,10), ylab = "Spectral Density", xlab = "omega",
        main = "Spectral Density Estimates \nwith True Spectral Density")
   lines(x = omega, y = rowMeans(log(specdens_Single)), lwd = 3, col = rgb(.76, .65, .81))
   lines(x = omega, y = rowMeans(log(specdens_Wishart)), lwd = 3, col = rgb(.48, .19, .58))
   lines(x = omega, y = rowMeans(log(specdens_eta_r)), lwd = 3, col = rgb(.65, .85, .62))
   lines(x = omega, y = rowMeans(log(specdens_eta_br)), lwd = 3, col = rgb(0, .53, .21))
-  lines(x = omega, y = log(arma_spec(omega = omega, phi = phi)), col = "black", lwd = 2)
+  lines(x = omega, y = log(arma_spec(omega = omega, phi = gendata1$phi[,r]) + arma_spec(omega = omega, phi = gendata2$phi[,r])),
+        col = "black", lwd = 2)
   #points(x = omega, y = log(Result_Wishart$perio[,r]), col = "gray", lwd = 0.5)
   legend("topright", col = c("black",
                              rgb(.76, .65, .81),
@@ -216,11 +228,5 @@ for(r in 1:R){
          lwd = c(3,3,3,3,3),
          legend = c("True", "Single","Wishart","eta_r","eta_br"))
 }
-
-
-
-
-
-
 
 
