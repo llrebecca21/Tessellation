@@ -27,8 +27,37 @@ generate_adapt = function(phi, n = 1000, R = 1, burn = 50){
 }
 
 
-
-
+# Generate an AR(2) with angle representation
+generate_ar2_peak <- function(peaks, bandwidths, variances = NULL, n){
+  # peaks - vector of length R with peak locations of each spectrum
+  # bandwidths - vector of length n_ts with the bandwidths of each spectrum
+  # variances - vector of length n_ts with the variances of the innovations 
+  #   of each process
+  # n_pts - length of each realization to be drawn of the process
+  R <- length(peaks)
+  if(is.null(variances)){
+    variances = rep(1, R)
+  }
+  # generate matrix of realizations of each process, the multitaper estimates,
+  # and the "true" spectra
+  matrix_timeseries <- matrix(nrow = n, ncol = R)
+  phi <- matrix(NA, nrow = 2, ncol = R)
+  for(i in 1:R) {
+    # autoregressive parameters
+    phi[1,i] <- 2 * cos(peaks[i]) * exp(-bandwidths[i])
+    phi[2,i] <- -exp(-2 * bandwidths[i])
+    
+    # data
+    matrix_timeseries[, i] <- arima.sim(list(ar = phi[,i]), 
+                        n = n, 
+                        sd = sqrt(variances[i]))
+    
+  }
+  return(list(
+    "matrix_timeseries" = matrix_timeseries,
+    "phi" = phi
+  ))
+}
 
 
 
