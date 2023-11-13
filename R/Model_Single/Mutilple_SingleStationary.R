@@ -128,6 +128,8 @@ Psi[,1] = 1
 dim(Psi)
 # Check X is orthogonal basis
 round(crossprod(Psi),5)
+
+plot.ts(Psi[,4])
 # not orthogonal because we are not evaluating the periodogram at the full n-1 values.
 # Initialize beta using least squares solution
 # Using the full data n-1 for periodogram can use this to initialize beta:
