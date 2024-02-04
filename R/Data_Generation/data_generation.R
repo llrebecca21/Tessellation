@@ -28,7 +28,7 @@ generate_adapt = function(phi, n = 1000, R = 1, burn = 50){
 
 
 # Generate an AR(2) with angle representation
-generate_ar2_peak <- function(peaks, bandwidths, variances = NULL, n){
+generate_ar2_peak = function(peaks, bandwidths, variances = NULL, n){
   # peaks - vector of length R with peak locations of each spectrum
   # bandwidths - vector of length n_ts with the bandwidths of each spectrum
   # variances - vector of length n_ts with the variances of the innovations 
@@ -60,7 +60,10 @@ generate_ar2_peak <- function(peaks, bandwidths, variances = NULL, n){
 }
 
 
-
+# Generate a non-stationary time series
+generate_nonstat_abrupt = function(){
+  
+}
 
 
 
