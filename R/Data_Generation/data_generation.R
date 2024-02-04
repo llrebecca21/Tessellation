@@ -61,8 +61,19 @@ generate_ar2_peak = function(peaks, bandwidths, variances = NULL, n){
 
 
 # Generate a non-stationary time series
-generate_nonstat_abrupt = function(){
+generate_nonstat_abrupt = function(phi1, phi2, n = 1000, R = 1, burn = 50){
+  # phi1 controls the input for the first AR(p) process
+  # phi2 controls the input for the second AR(p) process
+  # bp : controls how many breakpoints we want
   
+  # Need to Create ~ R copies of the time series and store it in a matrix
+  # Each column of the matrix contains a time series
+  # create matrix to store the time series: (R x (nx2))
+  matrix_timeseries = matrix(NA, nrow = n * bp, ncol = R)
+  for(r in 1:R){
+    matrix_timeseries[,r] <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
+  }
+  return(list("matrix_timeseries" = matrix_timeseries))
 }
 
 
