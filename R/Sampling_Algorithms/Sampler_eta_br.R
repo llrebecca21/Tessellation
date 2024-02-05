@@ -133,5 +133,6 @@ Sampler_eta_br = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, ta
     }
     
   }
-  return(list("bb_beta_array" = bb_beta_array, "eta_br_array" = eta_br_array, "Theta" = Theta, "perio" = perio))
+  return(list("bb_beta_array" = bb_beta_array, "eta_br_array" = eta_br_array, "Theta" = Theta, "perio" = perio, "Sigma" = Sigma,
+              "sumPsi" = sumPsi, "Psi" = Psi))
 }
