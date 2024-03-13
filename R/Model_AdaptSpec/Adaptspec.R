@@ -6,15 +6,15 @@
 # libraries:
 
 # Source Code:
-set.seed(100)
+set.seed(101)
 # Code for updating basis function coefficients for each piece-wise stationary segment
 source("R/Model_Single/posterior_multiple.R") # calculates posterior 
 source("R/Model_Single/gr_multiple.R") # calculates the gradient
 source("R/Model_Single/he_multiple.R") # calculates the hessian
 source("R/General_Functions/Chol_sampling.R") # performs Cholesky Sampling
 source("R/General_Functions/arma_spec.R") # determines the spectral density of the resulting stationary segment
-source("R/Model_Single/mcmc_stationary.R") # performs mcmc sampling
 source("R/Data_Generation/data_generation.R") # data generating code
+source("R/Sampling_Algorithms/Sampler_Single.R") # Performs the Sampling algorithm for a stationary time series
 
 # # Create a single non-stationary time series
 # set hyper-parameters
@@ -52,6 +52,10 @@ for(r in 1:R){
 # plot the resulting time series
 ts.plot(ts_list[[1]])
 
+# For simplicity for this file set ts_list[[1]] as timeseries
+timeseries = ts_list[[1]]
+
+
 # highest little j index value for the frequencies
 # J = floor((n-1) / 2)
 # Frequency (\omega_j): defined on [0, 2\pi)
@@ -61,14 +65,44 @@ ts.plot(ts_list[[1]])
 
 # Determine the starting segment break placements \xi_m based on number of segments and tmin condition
 xi_c = c(0,cumsum(s_length[[1]]))
+# xi_0 = 0 
+# xi_1 = 264
+# xi_2 = 517
+# xi_3 = 748
+# xi_4 = 1000
+
+# Specify the intervals for the current time series
+# Segment 1: [0, 264]
+# Segment 2: [265, 517]
+# Segment 3: [518, 748]
+# Segment 4: [749, 1000]
+
 
 # Determine current number of segments to begin with s^c
 # To begin set it equal to the truth
 S_c = length(xi_c) - 1
 
-# Run the mcmc_stationary sampler on each segment to get the initial values for the basis coefficients
+# Initialize storage for the basis coefficients
+theta_list = vector(mode = "list", length = 100)
+# Create list to store periodogram
+perio_list = vector(mode = "list", length = 100)
 
+# Run the Sampler_Single on each segment to get the initial values for the basis coefficients
+# create matrix to store the outputs as matrices
+theta_list[[1]] = matrix(NA, nrow = S_c, ncol = B + 3)
+perio_list[[1]] = vector(mode = "list", length = S_c)
+for(k in 1:S_c){
+  # Run the sampler on the kth segment of the time-series
+  seg_cur = timeseries[(xi_c[k]+1):(xi_c[k+1])]
+  # run the sampler and store
+  init_out = Sampler_Single(cbind(seg_cur))
+  theta_list[[1]][k,] = c(init_out$Theta[nrow(init_out$Theta),], init_out$lambda)
+  perio_list[[1]][[k]] = init_out$perio
+}
 
+# Set the current Theta and perio as:
+theta_c = theta_list[[1]]
+perio_c = perio_list[[1]]
 
 ###################
 # MCMC Moves
