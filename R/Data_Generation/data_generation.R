@@ -68,10 +68,11 @@ generate_nonstat_abrupt = function(phi1, phi2, n = 1000, R = 1, burn = 50){
   
   # Need to Create ~ R copies of the time series and store it in a matrix
   # Each column of the matrix contains a time series
-  # create matrix to store the time series: (R x (nx2))
-  matrix_timeseries = matrix(NA, nrow = n * bp, ncol = R)
+  # create matrix to store the time series: (R x (nx(bp)))
+  matrix_timeseries = matrix(NA, nrow = n*2, ncol = R)
   for(r in 1:R){
-    matrix_timeseries[,r] <- arima.sim(model = list("ar" = phi), n = n, n.start = burn)
+    matrix_timeseries[,r] <- cbind(arima.sim(model = list("ar" = phi1), n = n, n.start = burn),
+                                   arima.sim(model = list("ar" = phi2), n = n, n.start = burn))
   }
   return(list("matrix_timeseries" = matrix_timeseries))
 }
