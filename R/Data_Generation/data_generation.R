@@ -60,24 +60,48 @@ generate_ar2_peak = function(peaks, bandwidths, variances = NULL, n){
 }
 
 
-# Generate a non-stationary time series
-generate_nonstat_abrupt = function(phi1, phi2, n = 1000, R = 1, burn = 50){
-  # phi1 controls the input for the first AR(p) process
-  # phi2 controls the input for the second AR(p) process
-  # bp : controls how many breakpoints we want
+# Generate a non-stationary time series: 2 known segments
+# generate_nonstat_abrupt = function(phi1, phi2, n = 1000, R = 1, burn = 50){
+#   # phi1 controls the input for the first AR(p) process
+#   # phi2 controls the input for the second AR(p) process
+#   # bp : controls how many breakpoints we want
+#   
+#   # Need to Create ~ R copies of the time series and store it in a matrix
+#   # Each column of the matrix contains a time series
+#   # create matrix to store the time series: (R x (nx(bp)))
+#   matrix_timeseries = matrix(NA, nrow = n*2, ncol = R)
+#   for(r in 1:R){
+#     matrix_timeseries[,r] <- cbind(arima.sim(model = list("ar" = phi1), n = n, n.start = burn),
+#                                    arima.sim(model = list("ar" = phi2), n = n, n.start = burn))
+#   }
+#   return(list("matrix_timeseries" = matrix_timeseries))
+# }
+
+
+# Generate a non-stationary time series: Any number of segments from [1,..,Smax] : S_true
+# Need to make more robust for how many arima.sim's we will be given
+# do.call(cbind, lapply(a, combn, 2))
+generate_nonstat_abrupt = function(ar_list, n = 1000, R = 1, burn = 50, S_true = S_true){
+  # ar_list stores the randomly generated parameters for ar in a list
+  # S_true : gives number stationary piece-wise segments we have for simulation purposes
+  
+  # Create sequence of n's where their sum is n, approximately equal lengths
+  s_length = rmultinom(n = 1, size = n, prob = rep(1,S_true))
+  # Run tmin condition checks here
   
   # Need to Create ~ R copies of the time series and store it in a matrix
   # Each column of the matrix contains a time series
   # create matrix to store the time series: (R x (nx(bp)))
-  matrix_timeseries = matrix(NA, nrow = n*2, ncol = R)
+  matrix_timeseries = matrix(NA, nrow = n, ncol = R)
   for(r in 1:R){
-    matrix_timeseries[,r] <- cbind(arima.sim(model = list("ar" = phi1), n = n, n.start = burn),
-                                   arima.sim(model = list("ar" = phi2), n = n, n.start = burn))
+    d = numeric(0)
+    for(i in 1:length(ar_list)){
+      d = c(d, arima.sim(model = list("ar" = ar_list[[i]]), n = s_length[i], n.start = burn))
+    }
+    matrix_timeseries[,r] = d
   }
-  return(list("matrix_timeseries" = matrix_timeseries))
+  return(list("matrix_timeseries" = matrix_timeseries, "s_length" = s_length))
 }
-
-
 
 
 
