@@ -8,7 +8,7 @@ get_s_fun = function(S, Smax, tmin, timeseries){
   # Determine if birth can occur
   can_birth = as.numeric((S < Smax) & (len_S > 2*tmin))
   # Determine if death can occur
-  can_death = as.numeric((S > Smax) & (len_S > 2*tmin))
+  can_death = as.numeric((S > 0) & (len_S > 2*tmin))
   # Probability of birth
   prob_birth = can_birth/(can_birth + can_death)
   # Probability of death
