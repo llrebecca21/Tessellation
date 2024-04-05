@@ -24,6 +24,9 @@ get_r_fun = function(Smax, tmin, xi_cur, xi_prop){
     num_seg = sum(as.numeric(len_s >= 2*tmin))
     r2 = 1/num_seg
     # r3 = prob_location_in_segment (based on length of chosen segment)
+    # Do this by determining which index do the two vectors xi_cur and xi_prop differ
+    # Then the index we want in len_s is the first index where the change starts -1.
+    # In the math |S_{m^*}| = len_s[which(xi_cur != xi_prop[-length(xi_prop)])[1]-1]
     r3 = 1/(len_s[which(xi_cur != xi_prop[-length(xi_prop)])[1]-1]-2*tmin + 1)
     # r = r1 * r2 * r3
     prob_r = r1*r2*r3
