@@ -79,11 +79,11 @@ birth_fun = function(xi_prop,xi_cur,tmin,Smax,Beta,tau, timeseries, sigmasalpha,
   if(U < A){
     # Accept
     if(m_star == 1){
-      Beta_prop = cbind(beta_p1, beta_p2, Beta[(m_star+1):(ncol(Beta))])
+      Beta_prop = cbind(beta_p1, beta_p2, Beta[,(m_star+1):(ncol(Beta))])
     } else if(m_star == ncol(Beta)){
-      Beta_prop = cbind(Beta[1:(m_star-1)], beta_p1, beta_p2)
+      Beta_prop = cbind(Beta[,1:(m_star-1)], beta_p1, beta_p2)
     }else{
-      Beta_prop = cbind(Beta[1:(m_star-1)], beta_p1, beta_p2, Beta[(m_star+1):(ncol(Beta))])
+      Beta_prop = cbind(Beta[,1:(m_star-1)], beta_p1, beta_p2, Beta[,(m_star+1):(ncol(Beta))])
     }
     return(list("Beta" = Beta_prop, "xi" = xi_prop, "tau" = tau_prop))
   }else{
