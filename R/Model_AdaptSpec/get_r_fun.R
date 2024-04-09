@@ -1,7 +1,17 @@
-# xi_cur = seq(0,1000,by = 100)
-# xi_prop = c(xi_cur[1:4],350,xi_cur[5:11])
-# tmin = 30
-# Smax = floor(xi_cur[length(xi_cur)]/tmin)
+#' Function that returns the probability values of a birth or death move
+#'
+#' @param Smax 
+#' @param tmin 
+#' @param xi_cur 
+#' @param xi_prop 
+#'
+#' @return
+#'
+#' @examples
+#' ## xi_cur = seq(0,1000,by = 100)
+#' ## xi_prop = c(xi_cur[1:4],350,xi_cur[5:11])
+#' ## tmin = 30
+#' ## Smax = floor(xi_cur[length(xi_cur)]/tmin)
 get_r_fun = function(Smax, tmin, xi_cur, xi_prop){
   S_cur = length(xi_cur)-1
   S_prop = length(xi_prop)-1
