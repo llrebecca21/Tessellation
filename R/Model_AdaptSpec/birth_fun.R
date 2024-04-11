@@ -4,8 +4,9 @@ source("~/Documents/Tessellation/R/Model_AdaptSpec/get_r_fun.R")
 source("~/Documents/Tessellation/R/Model_AdaptSpec/dtau.R")
 source("~/Documents/Tessellation/R/Model_AdaptSpec/rtau.R")
 source("~/Documents/Tessellation/R/Model_AdaptSpec/betapar.R")
-birth_fun = function(xi_prop,xi_cur,tmin,Smax,Beta,tau, timeseries, sigmasalpha, D, B, nu_0){
-  
+source("~/Documents/Tessellation/R/Model_AdaptSpec/rxi_birth.R")
+birth_fun = function(xi_cur,tmin,Smax,Beta,tau, timeseries, sigmasalpha, D, B, nu_0){
+  xi_prop = rxi_birth(Smax = Smax, tmin = tmin, xi_cur = xi_cur)
   # q(S^p | S^c) * q(\xi^p | S^c,\xi^c)
   # just the probability birth is possible given by the function get_r_fun
   q_seg_xi_birth = get_r_fun(Smax = Smax, tmin = tmin, xi_cur = xi_cur, xi_prop = xi_prop)
@@ -15,7 +16,7 @@ birth_fun = function(xi_prop,xi_cur,tmin,Smax,Beta,tau, timeseries, sigmasalpha,
   # Propose a tau
   m_star = which(xi_cur != xi_prop[-length(xi_prop)])[1]-1
   tau_cur = tau[m_star]
-  beta_cur = Beta[,m_star]
+  beta_cur = Beta[m_star,]
   # call function that proposes two new tau parameters
   tau_p1 = rtau(tau_cur)
   tau_p2 = tau_cur^2/tau_p1
@@ -38,12 +39,14 @@ birth_fun = function(xi_prop,xi_cur,tmin,Smax,Beta,tau, timeseries, sigmasalpha,
   beta_p2 = c(mvtnorm::rmvnorm(1, mean = par2$mean, sigma = par2$cov))
   
   # get q_betas
-  q_beta1 = mvtnorm::dmvnorm(beta_p1, mean = par1$mean, sigma = par1$cov)
-  q_beta2 = mvtnorm::dmvnorm(beta_p2, mean = par2$mean, sigma = par2$cov)
+  q_beta1 = mvtnorm::dmvnorm(beta_p1, mean = par1$mean, sigma = par1$cov, log = TRUE)
+  q_beta2 = mvtnorm::dmvnorm(beta_p2, mean = par2$mean, sigma = par2$cov, log = TRUE)
   
   # q_betac
   par3 = betapar(tsq = tau_cur, sigmasalpha = sigmasalpha, D = D, ts_seg = timeseries[(xi_prop[m_star]+1):(xi_prop[m_star+2])], B = B)
-  q_betac = mvtnorm::dmvnorm(beta_cur, mean = par3$mean, sigma = par3$cov)
+  
+  print(par3$mean)
+  q_betac = mvtnorm::dmvnorm(beta_cur, mean = par3$mean, sigma = par3$cov, log = TRUE)
   
   
   # Calculate the Likelihood for birth
@@ -79,11 +82,11 @@ birth_fun = function(xi_prop,xi_cur,tmin,Smax,Beta,tau, timeseries, sigmasalpha,
   if(U < A){
     # Accept
     if(m_star == 1){
-      Beta_prop = cbind(beta_p1, beta_p2, Beta[,(m_star+1):(ncol(Beta))])
-    } else if(m_star == ncol(Beta)){
-      Beta_prop = cbind(Beta[,1:(m_star-1)], beta_p1, beta_p2)
+      Beta_prop = rbind(beta_p1, beta_p2, Beta[(m_star+1):(nrow(Beta)), ])
+    } else if(m_star == nrow(Beta)){
+      Beta_prop = rbind(Beta[1:(m_star-1), ], beta_p1, beta_p2)
     }else{
-      Beta_prop = cbind(Beta[,1:(m_star-1)], beta_p1, beta_p2, Beta[,(m_star+1):(ncol(Beta))])
+      Beta_prop = rbind(Beta[1:(m_star-1), ], beta_p1, beta_p2, Beta[(m_star+1):(nrow(Beta)), ])
     }
     return(list("Beta" = Beta_prop, "xi" = xi_prop, "tau" = tau_prop))
   }else{
