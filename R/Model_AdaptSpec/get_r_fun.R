@@ -40,7 +40,7 @@ get_r_fun = function(Smax, tmin, xi_cur, xi_prop){
     r3 = 1/(len_s[which(xi_cur != xi_prop[-length(xi_prop)])[1]-1]-2*tmin + 1)
     # r = r1 * r2 * r3
     prob_r = r1*r2*r3
-    return(prob_r)
+    return(log(prob_r))
   }else{ # death
     # r1 = prob_death
     r1 = prob_death
@@ -48,6 +48,6 @@ get_r_fun = function(Smax, tmin, xi_cur, xi_prop){
     r2 = 1/(length(xi_cur)-2)
     # r = r1 * r2
     prob_r = r1*r2
-    return(prob_r)
+    return(log(prob_r))
   }
 }
