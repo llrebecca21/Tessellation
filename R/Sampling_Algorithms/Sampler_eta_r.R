@@ -18,15 +18,15 @@ Sampler_eta_r = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, tau
   n = nrow(timeseries)
   R = ncol(timeseries)
   # highest little j index value for the frequencies
-  J = floor((n-1) / 2)
+  J = floor(n / 2)
   # Frequency (\omega_j): defined on [0, 2\pi)
-  omega = (2 * pi * (0:J)) / n
+  omega = (2 * pi * (1:J)) / n
   
   # Define Periodogram
   # Define y_n(\omega_j) for the posterior function below
-  perio = (abs(mvfft(timeseries)) ^ 2 / n)
+  perio = (abs(mvfft(timeseries))^2 / n)
   # subset perio for unique values, J = ceil((n-1) / 2) 
-  perio = perio[(0:J) + 1, , drop=FALSE]
+  perio = perio[(1:J)+1, , drop=FALSE]
   
   ##########################
   # Set Hyper-Parameters
@@ -64,7 +64,7 @@ Sampler_eta_r = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, tau
   # Specify Sum of X for the posterior function later
   # Specify Sum of X for the posterior function later
   # 1^T_n X part in the paper: identical to colSums but is a faster calculation
-  sumPsi = crossprod(Psi, rep(1,J+1)) 
+  sumPsi = crossprod(Psi, rep(1,J)) 
   # Initialize first row of Theta
   Theta[1,] = c(betavalues, tausquared)
   # Create Array to store values of bb_beta
@@ -115,7 +115,7 @@ Sampler_eta_r = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, tau
       map = optim(par = br, fn = posterior_eta_r, gr = gradient_eta_r, method ="BFGS", control = list(fnscale = -1),
                   Psi = Psi, sumPsi = sumPsi, y = perio[,r], Sigma = Sigma, eta_r = eta_r)$par
       # Call the hessian function
-      norm_precision = he_eta_r(br = map, Psi = Psi, y = perio[,r], Sigma = Sigma, eta_r = eta_r) * -1
+      norm_precision = he_eta_r(br = map, Psi = Psi, y = perio[,r], Sigma = Sigma, eta_r = eta_r) * -2
       # Calculate the \beta^* proposal, using Cholesky Sampling
       betaprop = Chol_sampling(Lt = chol(norm_precision), d = B + 1, beta_c = map)
       # Calculate acceptance ratio
@@ -125,12 +125,15 @@ Sampler_eta_r = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, tau
       accept <- runif(1)
       if(accept < prop_ratio){
         # Accept betaprop as new beta^(r)
-        bb_beta_array[g, ,r] <- betaprop
+        bb_beta[,r] <- betaprop
       }else{
         # Reject betaprop as new beta^(r)
-        bb_beta_array[g, ,r] <- br
+        bb_beta[,r] <- br
       }
     }
+    bb_beta_array[g,,] <- bb_beta
   }
-  return(list("bb_beta_array" = bb_beta_array, "eta_array" = eta_array, "Theta" = Theta, "perio" = perio))
+  return(list("bb_beta_array" = bb_beta_array, "eta_array" = eta_array, "Theta" = Theta, "perio" = perio, "av_perio" = y_bar))
+  
+  
 }
