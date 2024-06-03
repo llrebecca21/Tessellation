@@ -125,13 +125,13 @@ Sampler_eta_br = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, ta
       accept <- runif(1)
       if(accept < prop_ratio){
         # Accept betaprop as new beta^(r)
-        bb_beta_array[g, ,r] <- betaprop
+        bb_beta[,r] <- betaprop
       }else{
         # Reject betaprop as new beta^(r)
-        bb_beta_array[g, ,r] <- br
+        bb_beta[,r] <- br
       }
     }
-    
+    bb_beta_array[g,,] <- bb_beta
   }
   return(list("bb_beta_array" = bb_beta_array, "eta_br_array" = eta_br_array, "Theta" = Theta, "perio" = perio, "Sigma" = Sigma,
               "sumPsi" = sumPsi, "Psi" = Psi))
