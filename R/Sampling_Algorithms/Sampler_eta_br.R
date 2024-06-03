@@ -18,15 +18,15 @@ Sampler_eta_br = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, ta
   n = nrow(timeseries)
   R = ncol(timeseries)
   # highest little j index value for the frequencies
-  J = floor((n-1) / 2)
+  J = floor(n / 2)
   # Frequency (\omega_j): defined on [0, 2\pi)
-  omega = (2 * pi * (0:J)) / n
+  omega = (2 * pi * (1:J)) / n
   
   # Define Periodogram
   # Define y_n(\omega_j) for the posterior function below
-  perio = (abs(mvfft(timeseries)) ^ 2 / n)
+  perio = (abs(mvfft(timeseries))^2 / n)
   # subset perio for unique values, J = ceil((n-1) / 2) 
-  perio = perio[(0:J) + 1, , drop=FALSE]
+  perio = perio[(1:J)+1, , drop=FALSE]
   
   
   ##########################
