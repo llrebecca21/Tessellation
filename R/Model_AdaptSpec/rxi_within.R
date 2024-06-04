@@ -1,6 +1,6 @@
 #get proposal xi
 
-rxi_within = function(tmin, xi_cur,w = 0.2){
+rxi_within = function(tmin, xi_cur,w = 0.3){
   S_cur = length(xi_cur)-1
   # sample m_star wth equal probabilities
   m_star = sample(seq(1,S_cur - 1), 1)
@@ -12,7 +12,7 @@ rxi_within = function(tmin, xi_cur,w = 0.2){
   long_check = rep(1/length(t_seq),length(t_seq))
   #long_move = sample(t_seq,1,long_check)
   ls_check = w*(long_check) + (1-w)*(short_check)
-  xi_p = sample(t_seq,1,prob= ls_check)
+  xi_p = t_seq[sample(1:length(t_seq),1,prob= ls_check)]
   # get xi_prop
   xi_prop = xi_cur
   xi_prop[m_star + 1] = xi_p
