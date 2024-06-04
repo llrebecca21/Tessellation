@@ -1,5 +1,6 @@
 # create a function to get Gaussian parameters used to estimate a beta proposal
 betapar = function(tsq, sigmasalpha, D, ts_seg, B){
+  #n=50
   #tsq = 1
   #ts_seg = timeseries[1:264]
   n = length(ts_seg)
@@ -12,7 +13,7 @@ betapar = function(tsq, sigmasalpha, D, ts_seg, B){
   b = c(solve(crossprod(Psi), crossprod(Psi, perio)))
   # Maximum A Posteriori (MAP) estimate : finds the alpha and beta that gives us the mode of the conditional posterior of beta and alpha_0 conditioned on y
   map = c(optim(par = b, fn = beta_cond_post, gr = gr_adapt, method ="BFGS", control = list(fnscale = 1),
-              Psi = Psi, sumPsi = sumPsi, perio = perio, Sigma = c(sigmasalpha, D * tsq))$par)
+              Psi = Psi, sumPsi = sumPsi,n = n ,perio = perio, Sigma = c(sigmasalpha, D * tsq))$par)
   # Call the hessian function
   norm_precision = -1 * he_adapt(beta_mstar = map, Psi = Psi, sumPsi = sumPsi, Sigma =  c(sigmasalpha, D * tsq), perio = perio)
   return(list("mean" = map, "cov" = solve(norm_precision), "perio" = perio, "Psi" = Psi, "sumPsi" = sumPsi))
