@@ -47,11 +47,15 @@ within_fun = function(xi_cur,tmin,Smax,Beta,tau, timeseries, sigmasalpha, D, B, 
   
   # Likelihood
   # proposal:
-  L_p1 = log_likelihood_adapt(b=beta_p1, Psi = par_p1$Psi, sumPsi = par_p1$sumPsi, perio = par_p1$perio) 
-  L_p2 = log_likelihood_adapt(b=beta_p2, Psi = par_p2$Psi, sumPsi = par_p2$sumPsi, perio = par_p2$perio)
+  L_p1 = log_likelihood_adapt(b=beta_p1, Psi = par_p1$Psi, sumPsi = par_p1$sumPsi, perio = par_p1$perio,
+                              n = length(timeseries[(xi_prop[m_star]+1):(xi_prop[m_star+1])])) 
+  L_p2 = log_likelihood_adapt(b=beta_p2, Psi = par_p2$Psi, sumPsi = par_p2$sumPsi, perio = par_p2$perio,
+                              n = length(timeseries[(xi_prop[m_star+1]+1):(xi_prop[m_star+2])]))
   # current
-  L_c1 = log_likelihood_adapt(b=beta_c1, Psi = par_c1$Psi, sumPsi = par_c1$sumPsi, perio = par_c1$perio) 
-  L_c2 = log_likelihood_adapt(b=beta_c2, Psi = par_c2$Psi, sumPsi = par_c2$sumPsi, perio = par_c2$perio)
+  L_c1 = log_likelihood_adapt(b=beta_c1, Psi = par_c1$Psi, sumPsi = par_c1$sumPsi, perio = par_c1$perio,
+                              n = length(timeseries[(xi_cur[m_star]+1):(xi_cur[m_star+1])])) 
+  L_c2 = log_likelihood_adapt(b=beta_c2, Psi = par_c2$Psi, sumPsi = par_c2$sumPsi, perio = par_c2$perio,
+                              n = length(timeseries[(xi_cur[m_star+1]+1):(xi_cur[m_star+2])]))
   
   # Posterior
   # proposal
