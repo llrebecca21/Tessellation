@@ -27,18 +27,8 @@ death_fun = function(xi_cur,tmin,Smax,Beta,tau, timeseries, sigmasalpha, D, B, n
   # extract tau_c2
   tau_c2 = tau[m_star + 1]
   tau_p = sqrt(tau_c1 * tau_c2)
-  
-  if(length(xi_cur) == 3){
-    tau_prop = tau_p
-  }else if(m_star == 1){
-    tau_prop = c(tau_p, tau[(m_star+2):length(tau)])
-  } else if(m_star == (length(tau)-1)){
-    tau_prop = c(tau[1:(m_star-1)], tau_p)
-  }else{
-    tau_prop = c(tau[1:(m_star-1)], tau_p, tau[(m_star+2):length(tau)])
-  }
-  
-  q_tau = dtau(tau_p1 = tau_c1, tau_cur = tau_p)
+
+  q_tau = dtau(tau_p1 = tau_c1, tau_p2 = tau_c2)
   
   # extract beta_c1
   beta_c1 = Beta[m_star, ]
@@ -60,11 +50,14 @@ death_fun = function(xi_cur,tmin,Smax,Beta,tau, timeseries, sigmasalpha, D, B, n
   
   # Calculate the Likelihood for birth
   # current:
-  L_c1 = log_likelihood_adapt(b=beta_c1, Psi = par_c1$Psi, sumPsi = par_c1$sumPsi, perio = par_c1$perio)
-  L_c2 = log_likelihood_adapt(b=beta_c2, Psi = par_c2$Psi, sumPsi = par_c2$sumPsi, perio = par_c2$perio)
+  L_c1 = log_likelihood_adapt(b=beta_c1, Psi = par_c1$Psi, sumPsi = par_c1$sumPsi, perio = par_c1$perio,
+                              n = length(timeseries[(xi_cur[m_star]+1):(xi_cur[m_star + 1])]))
+  L_c2 = log_likelihood_adapt(b=beta_c2, Psi = par_c2$Psi, sumPsi = par_c2$sumPsi, perio = par_c2$perio,
+                              n = length(timeseries[(xi_cur[m_star+1]+1):(xi_cur[m_star+2])]))
   
   # proposal:
-  L_p = log_likelihood_adapt(b=beta_p, Psi = par_p$Psi, sumPsi = par_p$sumPsi, perio = par_p$perio)
+  L_p = log_likelihood_adapt(b=beta_p, Psi = par_p$Psi, sumPsi = par_p$sumPsi, perio = par_p$perio,
+                             n = length(timeseries[(xi_cur[m_star]+1):(xi_cur[m_star+2])]))
   
   # Calculate posterior
   # current:
@@ -99,6 +92,17 @@ death_fun = function(xi_cur,tmin,Smax,Beta,tau, timeseries, sigmasalpha, D, B, n
     }else{
       Beta_prop = rbind(Beta[1:(m_star-1), ], beta_p, Beta[(m_star+2):nrow(Beta), ])
     }
+    
+    if(length(xi_cur) == 3){
+      tau_prop = tau_p
+    }else if(m_star == 1){
+      tau_prop = c(tau_p, tau[(m_star+2):length(tau)])
+    } else if(m_star == (length(tau)-1)){
+      tau_prop = c(tau[1:(m_star-1)], tau_p)
+    }else{
+      tau_prop = c(tau[1:(m_star-1)], tau_p, tau[(m_star+2):length(tau)])
+    }
+    
     return(list("Beta" = Beta_prop, "xi" = xi_prop, "tau" = tau_prop))
   }else{
     # Reject
