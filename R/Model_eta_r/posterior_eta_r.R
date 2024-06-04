@@ -12,5 +12,5 @@
 #'
 #' @examples
 posterior_eta_r = function(sumPsi, br, Psi, y, eta_r, Sigma){
-  -crossprod(sumPsi, br) - sum(y / exp(Psi %*% br)) - sum(eta_r * br * br / Sigma)
+  -crossprod(sumPsi, br) - sum(y / exp(Psi %*% br)) - sum(c(1, rep(eta_r,length(Sigma)-1)) * br * br / Sigma)
 }
