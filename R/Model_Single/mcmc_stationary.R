@@ -1,4 +1,4 @@
-#' Function that rungs the mcmc sampling algorithm for a single or multiple stationary time series
+#' Function that runs the mcmc sampling algorithm for a single or multiple stationary time series
 #'
 #' @param n : (integer) length of an individual time series
 #' @param iter : (integer) number of iterations the mcmc algorithm completes
@@ -157,9 +157,6 @@ mcmc_stationary <- function(n, iter, phi ,R = 1, B = 10 ){
   Theta <- Theta[-(1:burnin),]
   return(list("Theta" = Theta, "av_perio" = y_bar))
   
-  
-  
-
 }
 
 
