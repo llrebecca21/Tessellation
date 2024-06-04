@@ -12,7 +12,7 @@
 #' @export
 #'
 #' @examples
-Sampler_eta_r = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, tausquared = 1, lambda = 1){
+Sampler_eta_r = function(timeseries, B, iter, nu = 3, etasq = 1, tausquared = 1, lambda = 1){
   # Set outer parameters for simulations
   # extract n and R from timeseries
   n = nrow(timeseries)
@@ -61,7 +61,6 @@ Sampler_eta_r = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, tau
   betavalues = solve(crossprod(Psi), crossprod(Psi, log(y_bar)))
   # Initialize bb_beta at the mean for the prior of bb_beta
   bb_beta = tcrossprod(betavalues, rep(1,R))
-  # Specify Sum of X for the posterior function later
   # Specify Sum of X for the posterior function later
   # 1^T_n X part in the paper: identical to colSums but is a faster calculation
   sumPsi = crossprod(Psi, rep(1,J)) 
@@ -133,7 +132,11 @@ Sampler_eta_r = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, tau
     }
     bb_beta_array[g,,] <- bb_beta
   }
-  return(list("bb_beta_array" = bb_beta_array, "eta_array" = eta_array, "Theta" = Theta, "perio" = perio, "av_perio" = y_bar))
+  return(list("bb_beta_array" = bb_beta_array,
+              "eta_array" = eta_array,
+              "Theta" = Theta,
+              "perio" = perio,
+              "av_perio" = y_bar))
   
   
 }

@@ -6,7 +6,7 @@ Sampler_eta_r_n = function(ts_list, B = 10, iter = 1000, nu = 3, etasq = 1, taus
   R = length(n_len)
   
   # highest little j index value for the frequencies
-  J = floor((n_len-1) / 2)
+  J = floor(n_len / 2)
 
   # Define D's main diagonal : 
   # D is a measure of prior variance for \beta_1 through \beta_K
@@ -14,7 +14,7 @@ Sampler_eta_r_n = function(ts_list, B = 10, iter = 1000, nu = 3, etasq = 1, taus
   D = 1 / (4 * pi * (1:B)^2)
   
   # The new D matrix that houses the prior variance of \beta^* 
-  Sigma = c(1, D * tausquared)
+  Sigma = c(100, D * tausquared)
   
   # Create matrix to store estimated samples row-wise for (\beta^*, \tau^2)
   # ncol: number of parameters (beta^*, tau^2)
@@ -32,10 +32,10 @@ Sampler_eta_r_n = function(ts_list, B = 10, iter = 1000, nu = 3, etasq = 1, taus
   # Define Periodogram and Psi
   for(r in 1:R){
     # Define y_n(\omega_j) for the posterior function below
-    perio_list[[r]] = (abs(fft(ts_list[[r]])) ^ 2 / n_len[r])
+    perio_list[[r]] = (abs(fft(ts_list[[r]]))^ 2 / n_len[r])
     
     # subset perio for unique values, J = ceil((n-1) / 2) 
-    perio_list[[r]] = perio_list[[r]][(0:J[r]) + 1, , drop = FALSE]
+    perio_list[[r]] = perio_list[[r]][(1:J[r]) + 1, , drop = FALSE]
     
     ##########################
     # Set Hyper-Parameter Psi
@@ -43,7 +43,7 @@ Sampler_eta_r_n = function(ts_list, B = 10, iter = 1000, nu = 3, etasq = 1, taus
     # Values that are fixed and set by user
     # Create matrix of the basis functions
     # fix fourier frequencies
-    Psi_list[[r]] = outer(X = (2 * pi * (0:J[r])) / n_len[r], Y = 0:B, FUN = function(x,y){sqrt(2)* cos(y * x)})
+    Psi_list[[r]] = outer(X = (2 * pi * (1:J[r])) / n_len[r], Y = 0:B, FUN = function(x,y){sqrt(2)* cos(y * x)})
     # redefine the first column to be 1's
     Psi_list[[r]][,1] = 1
     
@@ -53,7 +53,7 @@ Sampler_eta_r_n = function(ts_list, B = 10, iter = 1000, nu = 3, etasq = 1, taus
     # Specify Sum of X for the posterior function later
     # 1^T_n X part in the paper: identical to colSums but is a faster calculation
     #sumPsi[,r] = c(crossprod(rep(1, nrow(Psi_list[[r]])), Psi_list[[r]]))
-    sumPsi[,r] = crossprod(Psi_list[[r]], rep(1,J[r]+1)) 
+    sumPsi[,r] = crossprod(Psi_list[[r]], rep(1,J[r])) 
     
   }
   #return(sumPsi)
@@ -95,7 +95,7 @@ Sampler_eta_r_n = function(ts_list, B = 10, iter = 1000, nu = 3, etasq = 1, taus
     # Update Theta matrix with new tau squared value
     Theta[g,B+2] = tausquared
     # Update Sigma with new tau^2 value
-    Sigma = c(1, D * tausquared)
+    Sigma = c(100, D * tausquared)
     #######################################
     # Sample \eta^r using slicing method
     #######################################
@@ -136,5 +136,9 @@ Sampler_eta_r_n = function(ts_list, B = 10, iter = 1000, nu = 3, etasq = 1, taus
       }
     }
   }
-  return(list("bb_beta_array" = bb_beta_array, "eta_array" = eta_array, "Theta" = Theta, "perio_list" = perio_list))
+  return(list("bb_beta_array" = bb_beta_array, "eta_array" = eta_array, "Theta" = Theta, "perio_list" = perio_list, "D" = D))
 }
+
+
+
+

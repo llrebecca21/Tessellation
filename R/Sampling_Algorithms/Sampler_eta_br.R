@@ -12,7 +12,7 @@
 #' @export
 #'
 #' @examples
-Sampler_eta_br = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, tausquared = 1, lambda = 1){
+Sampler_eta_br = function(timeseries, B = 10, iter = 1000, nu = 10, etasq = 1, tausquared = 1, lambda = 1){
   # Set outer parameters for simulations
   # extract n and R from timeseries
   n = nrow(timeseries)
@@ -25,7 +25,7 @@ Sampler_eta_br = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, ta
   # Define Periodogram
   # Define y_n(\omega_j) for the posterior function below
   perio = (abs(mvfft(timeseries))^2 / n)
-  # subset perio for unique values, J = ceil((n-1) / 2) 
+  # subset perio for unique values, J = floor(n / 2) 
   perio = perio[(1:J)+1, , drop=FALSE]
   
   
@@ -59,9 +59,8 @@ Sampler_eta_br = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, ta
   # Initialize bb_beta at the mean for the prior of bb_beta
   bb_beta = tcrossprod(betavalues, rep(1,R))
   # Specify Sum of X for the posterior function later
-  # Specify Sum of X for the posterior function later
   # 1^T_n X part in the paper: identical to colSums but is a faster calculation
-  sumPsi = crossprod(Psi, rep(1,J+1)) 
+  sumPsi = crossprod(Psi, rep(1,J)) 
   # Initialize first row of Theta
   Theta[1,] = c(betavalues, tausquared)
   # Create Array to store values of bb_beta
@@ -69,9 +68,9 @@ Sampler_eta_br = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, ta
   # initialize first array with bb_beta value
   bb_beta_array[1,,] = bb_beta
   # initialize starting value of eta_br
-  eta_br = matrix(1, nrow = B + 1 , ncol = R)
+  eta_br = matrix(1, nrow = B, ncol = R)
   # Create Array to store eta_br values
-  eta_br_array = array(data = NA, dim = c(iter,nrow(bb_beta),ncol(bb_beta)))
+  eta_br_array = array(data = NA, dim = c(iter,nrow(bb_beta)-1,ncol(bb_beta)))
   # Initialize eta_br values
   eta_br_array[1,,] = eta_br
   
@@ -80,12 +79,13 @@ Sampler_eta_br = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, ta
   #####################
   # need to update blackboard beta, eta_b^r, tau^2, lambda 
   for (g in 2:iter) {
+    #g = 2
     ###############################################
     # Sample \tau^2 and \lambda jointly with Gibbs
     ###############################################
     # Update \lambda and \tau with Gibbs Sampler
     lambda = 1/rgamma(1, (nu+1)/2, nu/tausquared + etasq)
-    tausquared = 1/rgamma(1, (nu + B * R)/2, sum(rowSums(bb_beta^2 * eta_br)[-1] / D)/2 + nu/lambda)
+    tausquared = 1/rgamma(1, (nu + B * R)/2, sum(rowSums(bb_beta[-1,]^2 * eta_br) / D)/2 + nu/lambda)
     # Update Theta matrix with new tau squared value
     Theta[g,B+2] = tausquared
     # Update Sigma with new tau^2 value
@@ -93,15 +93,23 @@ Sampler_eta_br = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, ta
     #######################################
     # Sample \eta_b^r using slicing method
     #######################################
-    rate = c(bb_beta * bb_beta / (2 * Sigma))
-    p = R * (B + 1)
-    u = runif(p)/(1 + c(eta_br))
-    q = runif(p)*(pgamma(rate/u^2, shape = 1))
-    eta_br = qgamma(q, shape = 1)/rate
-    # reconstruct shape
-    eta_br = matrix(eta_br, nrow = B + 1 , ncol = R)
+    lambda_eta = 1/rgamma(B*R, (nu+1)/2, nu/c(eta_br) + etasq)
+    eta_br = rgamma(B*R, (nu+1)/2, (c(bb_beta[-1,]^2) * tausquared / rep(D,R))/2 + nu/lambda_eta )
+    eta_br = matrix(eta_br, nrow = B, ncol = R)
     # put eta_br into array for storage
     eta_br_array[g,,] = eta_br
+    
+    # Previous slicing method code
+    #tausquared = 1/rgamma(1, (nu + B * R)/2, sum(rowSums(bb_beta[-1,]^2 * eta_br) / D)/2 + nu/lambda)
+    # rate = c(bb_beta[-1,]^2 / (2 * Sigma[-1]))
+    # p = R * (B)
+    # u = runif(p)/(1 + c(eta_br))
+    # q = runif(p)*(pgamma(rate/u^2, shape = 1))
+    # eta_br = qgamma(q, shape = 1)/rate
+    # # reconstruct shape
+    # eta_br = matrix(eta_br, nrow = B, ncol = R)
+    # # put eta_br into array for storage
+    # eta_br_array[g,,] = eta_br
     
     ######################
     # bb_beta update :MH
@@ -133,6 +141,18 @@ Sampler_eta_br = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, ta
     }
     bb_beta_array[g,,] <- bb_beta
   }
-  return(list("bb_beta_array" = bb_beta_array, "eta_br_array" = eta_br_array, "Theta" = Theta, "perio" = perio, "Sigma" = Sigma,
-              "sumPsi" = sumPsi, "Psi" = Psi))
+  return(list("bb_beta_array" = bb_beta_array,
+              "eta_br_array" = eta_br_array,
+              "Theta" = Theta,
+              "perio" = perio,
+              "av_perio" = y_bar,
+              "Sigma" = Sigma,
+              "sumPsi" = sumPsi,
+              "Psi" = Psi))
 }
+
+
+
+
+
+

@@ -5,15 +5,15 @@ Sampler_Wishart = function(timeseries,  B = 10, iter = 1000, nu = 3, etasq = 1, 
   R = ncol(timeseries)
   
   # highest little j index value for the frequencies
-  J = floor((n-1) / 2)
+  J = floor(n / 2)
   # Frequency (\omega_j): defined on [0, 2\pi)
-  omega = (2 * pi * (0:J)) / n
+  omega = (2 * pi * (1:J)) / n
   
   # Define Periodogram
   # Define y_n(\omega_j) for the posterior function below
-  perio = (abs(mvfft(timeseries)) ^ 2 / n)
-  # subset perio for unique values, J = ceil((n-1) / 2) 
-  perio = perio[(0:J) + 1, , drop=FALSE]
+  perio = (abs(mvfft(timeseries))^2 / n)
+  # subset perio for unique values, J = floor(n / 2) 
+  perio = perio[(1:J) + 1, , drop=FALSE]
   
   #################
   # MCMC parameters
@@ -62,7 +62,7 @@ Sampler_Wishart = function(timeseries,  B = 10, iter = 1000, nu = 3, etasq = 1, 
   # Specify Sum of X for the posterior function later
   # Specify Sum of X for the posterior function later
   # 1^T_n X part in the paper: identical to colSums but is a faster calculation
-  sumPsi = crossprod(Psi, rep(1,J+1)) 
+  sumPsi = crossprod(Psi, rep(1,J)) 
   # return(sumPsi)
   # Initialize first row of Theta
   Theta[1,] = c(betavalues, tausquared)
@@ -134,13 +134,13 @@ Sampler_Wishart = function(timeseries,  B = 10, iter = 1000, nu = 3, etasq = 1, 
       accept <- runif(1)
       if(accept < prop_ratio){
         # Accept betaprop as new beta^(r)
-        bb_beta_array[g, ,r] <- betaprop
+        bb_beta[,r] <- betaprop
       }else{
         # Reject betaprop as new beta^(r)
-        bb_beta_array[g, ,r] <- br
+        bb_beta[,r] <- br
       }
     }
-    
+    bb_beta_array[g,,] = bb_beta
   }
   
   return(list("bb_beta_array" = bb_beta_array, "Lambda_array" = Lambda_array, "Theta" = Theta, "perio" = perio))

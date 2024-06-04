@@ -7,7 +7,7 @@ Sampler_Wishart_n = function(ts_list,  B = 10, iter = 1000, nu = 3, etasq = 1, s
   R = length(n_len)
   
   # highest little j index value for the frequencies
-  J = floor((n_len-1) / 2)
+  J = floor(n_len / 2)
   # Frequency (\omega_j): defined on [0, 2\pi)
   #omega = (2 * pi * (0:J)) / n_len
   
@@ -50,14 +50,14 @@ Sampler_Wishart_n = function(ts_list,  B = 10, iter = 1000, nu = 3, etasq = 1, s
   for(r in 1:R){
     #r = 1
     # Define y_n(\omega_j) for the posterior function below
-    perio_list[[r]] = (abs(fft(ts_list[[r]])) ^ 2 / n_len[r])
+    perio_list[[r]] = (abs(fft(ts_list[[r]]))^ 2 / n_len[r])
     
     # subset perio for unique values, J = ceil((n-1) / 2) 
-    perio_list[[r]] = perio_list[[r]][(0:J[r]) + 1, , drop = FALSE]
+    perio_list[[r]] = perio_list[[r]][(1:J[r]) + 1, , drop = FALSE]
     
     # Create matrix of the basis functions
     # fix fourier frequencies
-    Psi_list[[r]] = outer(X = (2 * pi * (0:J[r])) / n_len[r], Y = 0:B, FUN = function(x,y){sqrt(2)* cos(y * x)})
+    Psi_list[[r]] = outer(X = (2 * pi * (1:J[r])) / n_len[r], Y = 0:B, FUN = function(x,y){sqrt(2)* cos(y * x)})
     # redefine the first column to be 1's
     Psi_list[[r]][,1] = 1
     
@@ -68,7 +68,7 @@ Sampler_Wishart_n = function(ts_list,  B = 10, iter = 1000, nu = 3, etasq = 1, s
     # Specify Sum of X for the posterior function later
     # 1^T_n X part in the paper: identical to colSums but is a faster calculation
     #sumPsi[,r] = c(crossprod(rep(1, nrow(Psi_list[[r]])), Psi_list[[r]]))
-    sumPsi[,r] = crossprod(Psi_list[[r]], rep(1,J[r]+1)) 
+    sumPsi[,r] = crossprod(Psi_list[[r]], rep(1,J[r])) 
   }
   #return(sumPsi)
   betavalues = rowMeans(betavalues)

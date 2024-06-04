@@ -6,7 +6,7 @@ Sampler_eta_br_n = function(ts_list, B = 10, iter = 1000, nu = 3, etasq = 1, tau
   R = length(n_len)
   
   # highest little j index value for the frequencies
-  J = floor((n_len-1) / 2)
+  J = floor(n_len / 2)
   
   # Define D's main diagonal : 
   # D is a measure of prior variance for \beta_1 through \beta_K
@@ -14,7 +14,7 @@ Sampler_eta_br_n = function(ts_list, B = 10, iter = 1000, nu = 3, etasq = 1, tau
   D = 1 / (4 * pi * (1:B)^2)
   
   # The new D matrix that houses the prior variance of \beta^* 
-  Sigma = c(1, D * tausquared)
+  Sigma = c(100, D * tausquared)
   
   # Create matrix to store estimated samples row-wise for (\beta^*, \tau^2)
   # ncol: number of parameters (beta^*, tau^2)
@@ -35,7 +35,7 @@ Sampler_eta_br_n = function(ts_list, B = 10, iter = 1000, nu = 3, etasq = 1, tau
     perio_list[[r]] = (abs(fft(ts_list[[r]])) ^ 2 / n_len[r])
     
     # subset perio for unique values, J = ceil((n-1) / 2) 
-    perio_list[[r]] = perio_list[[r]][(0:J[r]) + 1, , drop = FALSE]
+    perio_list[[r]] = perio_list[[r]][(1:J[r]) + 1, , drop = FALSE]
     
     ##########################
     # Set Hyper-Parameter Psi
@@ -43,7 +43,7 @@ Sampler_eta_br_n = function(ts_list, B = 10, iter = 1000, nu = 3, etasq = 1, tau
     # Values that are fixed and set by user
     # Create matrix of the basis functions
     # fix fourier frequencies
-    Psi_list[[r]] = outer(X = (2 * pi * (0:J[r])) / n_len[r], Y = 0:B, FUN = function(x,y){sqrt(2)* cos(y * x)})
+    Psi_list[[r]] = outer(X = (2 * pi * (1:J[r])) / n_len[r], Y = 0:B, FUN = function(x,y){sqrt(2)* cos(y * x)})
     # redefine the first column to be 1's
     Psi_list[[r]][,1] = 1
     
@@ -52,11 +52,11 @@ Sampler_eta_br_n = function(ts_list, B = 10, iter = 1000, nu = 3, etasq = 1, tau
     
     # Specify Sum of X for the posterior function later
     # 1^T_n X part in the paper: identical to colSums but is a faster calculation
-    #sumPsi[,r] = c(crossprod(rep(1, nrow(Psi_list[[r]])), Psi_list[[r]]))
-    sumPsi[,r] = crossprod(Psi_list[[r]], rep(1,J[r]+1)) 
+    # sumPsi[,r] = c(crossprod(rep(1, nrow(Psi_list[[r]])), Psi_list[[r]]))
+    sumPsi[,r] = crossprod(Psi_list[[r]], rep(1,J[r])) 
     
   }
-  #return(sumPsi)
+  # return(sumPsi)
   betavalues = rowMeans(betavalues)
   
   # Initialize bb_beta at the mean for the prior of bb_beta
@@ -85,9 +85,9 @@ Sampler_eta_br_n = function(ts_list, B = 10, iter = 1000, nu = 3, etasq = 1, tau
   # initialize first array with bb_beta value
   bb_beta_array[1,,] = bb_beta
   # initialize starting value of eta_br
-  eta_br = matrix(1, nrow = B + 1 , ncol = R)
+  eta_br = matrix(1, nrow = B, ncol = R)
   # Create Array to store eta_br values
-  eta_br_array = array(data = NA, dim = c(iter,nrow(bb_beta),ncol(bb_beta)))
+  eta_br_array = array(data = NA, dim = c(iter,nrow(bb_beta)-1,ncol(bb_beta)))
   # Initialize eta_br values
   eta_br_array[1,,] = eta_br
   
@@ -101,21 +101,21 @@ Sampler_eta_br_n = function(ts_list, B = 10, iter = 1000, nu = 3, etasq = 1, tau
     ###############################################
     # Update \lambda and \tau with Gibbs Sampler
     lambda = 1/rgamma(1, (nu+1)/2, nu/tausquared + etasq)
-    tausquared = 1/rgamma(1, (nu + B * R)/2, sum(rowSums(bb_beta^2 * eta_br)[-1] / D)/2 + nu/lambda)
+    tausquared = 1/rgamma(1, (nu + B * R)/2, sum(rowSums(bb_beta[-1,]^2 * eta_br) / D)/2 + nu/lambda)
     # Update Theta matrix with new tau squared value
     Theta[g,B+2] = tausquared
     # Update Sigma with new tau^2 value
-    Sigma = c(1, D * tausquared)
+    Sigma = c(100, D * tausquared)
     #######################################
     # Sample \eta_b^r using slicing method
     #######################################
-    rate = c(bb_beta * bb_beta / (2 * Sigma))
-    p = R * (B + 1)
+    rate = c(bb_beta[-1,] * bb_beta[-1,] / (2 * Sigma[-1]))
+    p = R * (B)
     u = runif(p)/(1 + c(eta_br))
     q = runif(p)*(pgamma(rate/u^2, shape = 1))
     eta_br = qgamma(q, shape = 1)/rate
     # reconstruct shape
-    eta_br = matrix(eta_br, nrow = B + 1 , ncol = R)
+    eta_br = matrix(eta_br, nrow = B , ncol = R)
     # put eta_br into array for storage
     eta_br_array[g,,] = eta_br
     
@@ -149,5 +149,5 @@ Sampler_eta_br_n = function(ts_list, B = 10, iter = 1000, nu = 3, etasq = 1, tau
     }
     
   }
-  return(list("bb_beta_array" = bb_beta_array, "eta_br_array" = eta_br_array, "Theta" = Theta, "perio_list" = perio_list))
+  return(list("bb_beta_array" = bb_beta_array, "eta_br_array" = eta_br_array, "Theta" = Theta, "perio_list" = perio_list, "D" = D))
 }
