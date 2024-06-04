@@ -85,6 +85,9 @@ generate_nonstat_abrupt = function(ar_list, n = 1000, R = 1, burn = 50, S_true =
   # ar_list stores the randomly generated parameters for ar in a list
   # S_true : gives number stationary piece-wise segments we have for simulation purposes
   
+  # generate the first one and then choose the next ones based on the previous ones
+  
+  
   # Create sequence of n's where their sum is n, approximately equal lengths
   s_length = rmultinom(n = 1, size = n, prob = rep(1,S_true))
   # Run tmin condition checks here
