@@ -20,15 +20,9 @@ birth_fun = function(xi_cur,tmin,Smax,Beta,tau, timeseries, sigmasalpha, D, B, n
   # call function that proposes two new tau parameters
   tau_p1 = rtau(tau_cur)
   tau_p2 = tau_cur^2/tau_p1
-  if(m_star == 1){
-    tau_prop = c(tau_p1, tau_p2, tau[(m_star+1):length(tau)])
-  } else if(m_star == length(tau)){
-    tau_prop = c(tau[1:(m_star-1)], tau_p1, tau_p2)
-  }else{
-    tau_prop = c(tau[1:(m_star-1)], tau_p1, tau_p2, tau[(m_star+1):length(tau)])
-  }
+  
   # Calculate q_tau
-  q_tau = dtau(tau_p1 = tau_p1, tau_cur = tau_cur)
+  q_tau = dtau(tau_p1 = tau_p1, tau_p2 = tau_p2)
   
   # Determine q_beta
   par1 = betapar(tsq = tau_p1, sigmasalpha = sigmasalpha, D = D, ts_seg = timeseries[(xi_prop[m_star]+1):(xi_prop[m_star+1])], B = B)
@@ -45,17 +39,20 @@ birth_fun = function(xi_cur,tmin,Smax,Beta,tau, timeseries, sigmasalpha, D, B, n
   # q_betac
   par3 = betapar(tsq = tau_cur, sigmasalpha = sigmasalpha, D = D, ts_seg = timeseries[(xi_prop[m_star]+1):(xi_prop[m_star+2])], B = B)
   
-  print(par3$mean)
+  #print(par3$mean)
   q_betac = mvtnorm::dmvnorm(beta_cur, mean = par3$mean, sigma = par3$cov, log = TRUE)
   
   
   # Calculate the Likelihood for birth
   # proposal:
-  L_p1 = log_likelihood_adapt(b=beta_p1, Psi = par1$Psi, sumPsi = par1$sumPsi, perio = par1$perio) 
-  L_p2 = log_likelihood_adapt(b=beta_p2, Psi = par2$Psi, sumPsi = par2$sumPsi, perio = par2$perio)
+  L_p1 = log_likelihood_adapt(b=beta_p1, Psi = par1$Psi, sumPsi = par1$sumPsi, perio = par1$perio,
+                              n = length(timeseries[(xi_prop[m_star]+1):(xi_prop[m_star+1])])) 
+  L_p2 = log_likelihood_adapt(b=beta_p2, Psi = par2$Psi, sumPsi = par2$sumPsi, perio = par2$perio,
+                              n = length(timeseries[(xi_prop[m_star+1]+1):(xi_prop[m_star+2])]))
   
   # current:
-  L_c = log_likelihood_adapt(b=beta_cur, Psi = par3$Psi, sumPsi = par3$sumPsi, perio = par3$perio)
+  L_c = log_likelihood_adapt(b=beta_cur, Psi = par3$Psi, sumPsi = par3$sumPsi, perio = par3$perio,
+                             n = length(timeseries[(xi_prop[m_star]+1):(xi_prop[m_star+2])]))
   
   # Calculate posterior
   # proposal:
@@ -82,12 +79,21 @@ birth_fun = function(xi_cur,tmin,Smax,Beta,tau, timeseries, sigmasalpha, D, B, n
   if(U < A){
     # Accept
     if(m_star == 1){
-      Beta_prop = rbind(beta_p1, beta_p2, Beta[(m_star+1):(nrow(Beta)), ])
+      Beta_prop = rbind(beta_p1, beta_p2, Beta[-1, ])
     } else if(m_star == nrow(Beta)){
       Beta_prop = rbind(Beta[1:(m_star-1), ], beta_p1, beta_p2)
     }else{
       Beta_prop = rbind(Beta[1:(m_star-1), ], beta_p1, beta_p2, Beta[(m_star+1):(nrow(Beta)), ])
     }
+    
+    if(m_star == 1){
+      tau_prop = c(tau_p1, tau_p2, tau[-1])
+    } else if(m_star == length(tau)){
+      tau_prop = c(tau[1:(m_star-1)], tau_p1, tau_p2)
+    }else{
+      tau_prop = c(tau[1:(m_star-1)], tau_p1, tau_p2, tau[(m_star+1):length(tau)])
+    }
+    
     return(list("Beta" = Beta_prop, "xi" = xi_prop, "tau" = tau_prop))
   }else{
     # Reject
