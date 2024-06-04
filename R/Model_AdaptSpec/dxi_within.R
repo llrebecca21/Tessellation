@@ -1,4 +1,4 @@
-dxi_within = function(xi_prop, tmin, xi_cur,w = 0.2){
+dxi_within = function(xi_prop, tmin, xi_cur,w = 0.3){
   S_cur = length(xi_cur)-1
   # get m_star that was sampled in the rxi_within function
   m_star = which(xi_cur != xi_prop)-1
