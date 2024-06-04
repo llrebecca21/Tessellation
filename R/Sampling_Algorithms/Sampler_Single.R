@@ -1,4 +1,4 @@
-Sampler_Single = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, sigmasquare = 100, tausquared = 1, lambda = 1){
+Sampler_Single = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, sigmasquare = 100, tausquared = 1, lambda = 1, burnin = 50){
   
   # extract n and R from timeseries
   n = nrow(timeseries)
@@ -88,10 +88,10 @@ Sampler_Single = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, si
     accept <- runif(1)
     if(accept < prop_ratio){
       # Accept betaprop as new beta^*
-      Theta[g, -(B+2)] <- betaprop
+      Theta[g, 1:(B+1)] <- betaprop
     }else{
       # Reject betaprop as new beta^*
-      Theta[g, -(B+2)] <- b
+      Theta[g, 1:(B+1)] <- b
     }
     ##############################
     # Tau^2 Update: Gibbs Sampler: conditional conjugate prior for the half-t
@@ -112,9 +112,8 @@ Sampler_Single = function(timeseries, B = 10, iter = 1000, nu = 3, etasq = 1, si
   # Plots and Diagnostics
   #######################
   # Remove burn-in
-  burnin <- 10
   Theta <- Theta[-(1:burnin),]
-  return(list("Theta" = Theta, "av_perio" = y_bar, "perio" = perio))
+  return(list("Theta" = Theta, "av_perio" = y_bar, "perio" = perio, "lambda" = lambda))
   
   
   
