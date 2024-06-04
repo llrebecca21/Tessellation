@@ -9,8 +9,8 @@ set.seed(100)
 source("R/Model_Single/posterior_multiple.R")
 source("R/Model_Single/gr_multiple.R")
 source("R/Model_Single/he_multiple.R")
-source("R/Chol_sampling.R")
-source("R/arma_spec.R")
+source("R/General_Functions/Chol_sampling.R")
+source("R/General_Functions/arma_spec.R")
 source("R/Model_Single/mcmc_stationary.R")
 source("R/Data_Generation/data_generation.R")
 
@@ -24,9 +24,9 @@ phi = 0.5
 burnin = 10
 
 # create vector of frequencies to check
-J = floor((n-1) / 2)
-test_omega = ((2 * pi * (0:J)) / n)[-1]
-omega = (2 * pi * (0:J)) / n
+J = floor(n / 2)
+test_omega = ((2 * pi * (1:J)) / n)
+omega = (2 * pi * (1:J)) / n
 # length(test_omega)
 # 249
 # True spectral density value at a given omega
