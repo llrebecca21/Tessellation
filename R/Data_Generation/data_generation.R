@@ -59,6 +59,23 @@ generate_ar2_peak = function(peaks, bandwidths, variances = NULL, n){
   ))
 }
 
+# Generate an AR(1) with angle representation
+generate_varar1 = function(n, R, burn = 50){
+  # create matrix to store the time series: (R x n)
+  matrix_timeseries = matrix(NA, nrow = n, ncol = R)
+  # create vector to store "true" theta
+  phi_true = rep(NA, R)
+  for(r in 1:R){
+    # set AR parameter
+    phi = NULL
+    # set MA parameter
+    phi = runif(n = 1, min = 0.45, max = 0.60)
+    phi_true[r] = phi
+    matrix_timeseries[,r] <- arima.sim(model = list(ar = phi), n = n, n.start = burn)
+  }
+  return(list("matrix_timeseries" = matrix_timeseries, "phi_true" = phi_true))
+}
+
 
 # Generate a non-stationary time series: 2 known segments
 # generate_nonstat_abrupt = function(phi1, phi2, n = 1000, R = 1, burn = 50){
