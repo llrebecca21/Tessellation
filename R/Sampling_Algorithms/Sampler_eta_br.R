@@ -94,7 +94,7 @@ Sampler_eta_br = function(timeseries, B = 10, iter = 1000, nu = 10, etasq = 1, t
     # Sample \eta_b^r using slicing method
     #######################################
     lambda_eta = 1/rgamma(B*R, (nu+1)/2, nu/c(eta_br) + etasq)
-    eta_br = rgamma(B*R, (nu+1)/2, (c(bb_beta[-1,]^2) * tausquared / rep(D,R))/2 + nu/lambda_eta )
+    eta_br = rgamma(B*R, (nu+1)/2, (c(bb_beta[-1,]^2) / (tausquared * rep(D,R) * 2)) + nu/lambda_eta )
     eta_br = matrix(eta_br, nrow = B, ncol = R)
     # put eta_br into array for storage
     eta_br_array[g,,] = eta_br
