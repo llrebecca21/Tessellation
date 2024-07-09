@@ -12,7 +12,7 @@
 #' @export
 #'
 #' @examples
-Sampler_eta_r = function(timeseries, B, iter, nu = 3, etasq = 1, tausquared = 1, lambda = 1){
+Sampler_eta_r = function(timeseries, B, iter, nu = 3, etasq = 1, tausquared = 1, lambda = 1, theta_z = 1, nu_r = 1,burnin = 50, scaling = 1){
   # Set outer parameters for simulations
   # extract n and R from timeseries
   n = nrow(timeseries)
@@ -47,10 +47,6 @@ Sampler_eta_r = function(timeseries, B, iter, nu = 3, etasq = 1, tausquared = 1,
   ########################
   # Initialize Parameters
   ########################
-  # set tau^2 value
-  tausquared = 50
-  # Define lambda for the half-t prior: \pi(\tau^2 | \lambda) and \pi(\lambda)
-  lambda = 1
   # The new D matrix that houses the prior variance of \beta^* 
   Sigma = c(1, D * tausquared)
   # Create matrix to store estimated samples row-wise for (\beta^*, \tau^2)
@@ -85,8 +81,8 @@ Sampler_eta_r = function(timeseries, B, iter, nu = 3, etasq = 1, tausquared = 1,
     # Sample \tau^2 and \lambda jointly with Gibbs
     ###############################################
     # Update \lambda and \tau with Gibbs Sampler
-    lambda = 1/rgamma(1, (nu+1)/2, nu/tausquared + etasq)
-    tausquared = 1/rgamma(1, (nu + B * R)/2, sum(rowSums(bb_beta^2 * tcrossprod(rep(1,B+1),eta))[-1] / D)/2 + nu/lambda)
+    lambda = 1/rgamma(1, (nu+1)/2, nu/tausquared + 1/etasq)
+    tausquared = 1/rgamma(1, (nu + B * R)/2, sum(rowSums(bb_beta^2 / tcrossprod(rep(1,B+1),eta))[-1] / D)/2 + nu/lambda)
     # Update Theta matrix with new tau squared value
     Theta[g,B+2] = tausquared
     # Update Sigma with new tau^2 value
@@ -94,13 +90,17 @@ Sampler_eta_r = function(timeseries, B, iter, nu = 3, etasq = 1, tausquared = 1,
     #######################################
     # Sample \eta^r using slicing method
     #######################################
-    
-    rate = colSums(bb_beta * bb_beta / (2 * Sigma))
-    u = runif(R)/(1 + eta)
-    q = runif(R)*(pgamma(rate/u^2, shape = (B + 1)/2))
-    eta = qgamma(q, shape = (B + 1)/2)/rate
-    # put eta_br into array for storage
+    z_eta = 1/rgamma(R, (nu_r+1)/2, nu_r/c(eta) + 1/theta_z)
+    eta = 1/rgamma(R, (nu_r+B)/2, (colSums(bb_beta[-1,]^2 / (tausquared * D * 2))) + nu_r/z_eta )
+    # put eta into array for storage
     eta_array[g,] = eta
+    
+    # rate = colSums(bb_beta * bb_beta / (2 * Sigma))
+    # u = runif(R)/(1 + eta)
+    # q = runif(R)*(pgamma(rate/u^2, shape = (B + 1)/2))
+    # eta = qgamma(q, shape = (B + 1)/2)/rate
+    # # put eta_br into array for storage
+    # eta_array[g,] = eta
     
     ######################
     # bb_beta update :MH
@@ -114,7 +114,7 @@ Sampler_eta_r = function(timeseries, B, iter, nu = 3, etasq = 1, tausquared = 1,
       map = optim(par = br, fn = posterior_eta_r, gr = gradient_eta_r, method ="BFGS", control = list(fnscale = -1),
                   Psi = Psi, sumPsi = sumPsi, y = perio[,r], Sigma = Sigma, eta_r = eta_r)$par
       # Call the hessian function
-      norm_precision = he_eta_r(br = map, Psi = Psi, y = perio[,r], Sigma = Sigma, eta_r = eta_r) * -2
+      norm_precision = he_eta_r(br = map, Psi = Psi, y = perio[,r], Sigma = Sigma, eta_r = eta_r) * -scaling
       # Calculate the \beta^* proposal, using Cholesky Sampling
       betaprop = Chol_sampling(Lt = chol(norm_precision), d = B + 1, beta_c = map)
       # Calculate acceptance ratio
@@ -132,9 +132,11 @@ Sampler_eta_r = function(timeseries, B, iter, nu = 3, etasq = 1, tausquared = 1,
     }
     bb_beta_array[g,,] <- bb_beta
   }
-  return(list("bb_beta_array" = bb_beta_array,
-              "eta_array" = eta_array,
-              "Theta" = Theta,
+  
+  # Return the burnin removed values:
+  return(list("bb_beta_array" = bb_beta_array[-(1:burnin),,],
+              "eta_array" = eta_array[-(1:burnin),],
+              "Theta" = Theta[-(1:burnin),],
               "perio" = perio,
               "av_perio" = y_bar))
   
