@@ -12,5 +12,5 @@
 #'
 #' @examples
 gradient_eta_r = function(br, sumPsi, Psi, y, Sigma, eta_r){
-  -sumPsi + colSums(Psi * c(y / exp(Psi %*% br))) - 2 * br / c(1, rep(eta_r,length(Sigma)-1)) / Sigma
+  -sumPsi + colSums(Psi * c(y / exp(Psi %*% br))) - (br / (c(1, rep(eta_r,length(Sigma)-1)) * Sigma))
 }
