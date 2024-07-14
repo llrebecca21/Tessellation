@@ -7,12 +7,16 @@
 #' @param etasq : hyper-parameter for 1/2 t distribution
 #' @param tausquared : initialization for tau^2
 #' @param lambda : initialization for lambda
+#' @param theta_z :
+#' @param nu_r :
+#' @param burnin : 
+#' @param scaling :
 #'
 #' @return
 #' @export
 #'
 #' @examples
-Sampler_eta_r = function(timeseries, B, iter, nu = 3, etasq = 1, tausquared = 1, lambda = 1, theta_z = 1, nu_r = 1,burnin = 50, scaling = 1){
+Sampler_eta_r = function(timeseries, B, iter, sigmasquared, nu, etasq, tausquared, theta_z, nu_r,burnin, scaling){
   # Set outer parameters for simulations
   # extract n and R from timeseries
   n = nrow(timeseries)
@@ -48,7 +52,7 @@ Sampler_eta_r = function(timeseries, B, iter, nu = 3, etasq = 1, tausquared = 1,
   # Initialize Parameters
   ########################
   # The new D matrix that houses the prior variance of \beta^* 
-  Sigma = c(1, D * tausquared)
+  Sigma = c(sigmasquared, D * tausquared)
   # Create matrix to store estimated samples row-wise for (\beta^*, \tau^2)
   # ncol: number of parameters (beta^*, tau^2)
   # dim : (iter) x (B + 2)
@@ -86,7 +90,7 @@ Sampler_eta_r = function(timeseries, B, iter, nu = 3, etasq = 1, tausquared = 1,
     # Update Theta matrix with new tau squared value
     Theta[g,B+2] = tausquared
     # Update Sigma with new tau^2 value
-    Sigma = c(1, D * tausquared)
+    Sigma = c(sigmasquared, D * tausquared)
     #######################################
     # Sample \eta^r using slicing method
     #######################################
@@ -116,7 +120,17 @@ Sampler_eta_r = function(timeseries, B, iter, nu = 3, etasq = 1, tausquared = 1,
       # Call the hessian function
       norm_precision = he_eta_r(br = map, Psi = Psi, y = perio[,r], Sigma = Sigma, eta_r = eta_r) * -scaling
       # Calculate the \beta^* proposal, using Cholesky Sampling
-      betaprop = Chol_sampling(Lt = chol(norm_precision), d = B + 1, beta_c = map)
+      betaprop = tryCatch(Chol_sampling(Lt = chol(norm_precision), d = B + 1, beta_c = map),
+                          error = function(e){
+                            return("error")
+                          })
+      if(betaprop[1] == "error"){
+        return(list("bb_beta_array" = bb_beta_array[-(1:burnin),,],
+                    "eta_array" = eta_array[-(1:burnin),],
+                    "Theta" = Theta[-(1:burnin),],
+                    "perio" = perio,
+                    "av_perio" = y_bar))
+      }
       # Calculate acceptance ratio
       prop_ratio = min(1, exp(posterior_eta_r(br = betaprop,  Psi = Psi, sumPsi = sumPsi, y = perio[,r], eta_r = eta_r, Sigma = Sigma) -
                                 posterior_eta_r(br = br, Psi = Psi, sumPsi = sumPsi, y = perio[,r], eta_r = eta_r, Sigma = Sigma)))
